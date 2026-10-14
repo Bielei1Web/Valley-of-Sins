@@ -390,6 +390,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7.5" r="3"/><path d="M2.5 20c0-3.3 2.9-5.8 6.5-5.8s6.5 2.5 6.5 5.8"/><path d="M17 8a2.6 2.6 0 110-5"/><path d="M20 20c0-2.4-1.7-4.4-4-5.2"/></svg>
                 <span>Mitglieder</span>
             </button>
+            <button class="tab-btn" draggable="true" data-tab="kontakte" onclick="switchTab('kontakte')">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.2 2.5-5.5 6-5.5s6 2.3 6 5.5"/><path d="M17 8h4M19 6v4M17 15h4M17 19h4"/></svg>
+                <span>Kontakte</span>
+            </button>
             <button class="tab-btn" draggable="true" data-tab="log" data-admin-only onclick="switchTab('log')">
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
                 <span>Änderungsprotokoll</span>
@@ -1040,6 +1044,60 @@
         </div>
     </div>
 
+    <div id="tab-kontakte" class="tab-content">
+        <h2 style="margin-bottom: 8px;">Kontakte</h2>
+        <p style="color: var(--text-muted); margin-bottom: 18px;">Gemeinsame Kontaktliste für freigeschaltete Benutzer mit entsprechendem Tab-Zugriff.</p>
+        <details id="contact-form-details">
+            <summary id="contact-form-summary">+ Kontakt hinzufügen</summary>
+            <div class="add-card" style="margin-top: 10px; margin-bottom: 0;">
+                <h2 id="contact-form-title">+ Kontakt hinzufügen</h2>
+                <form id="contact-form" onsubmit="saveContact(event)">
+                    <input type="hidden" id="contact-edit-id" value="">
+                    <div class="form-group">
+                        <label for="contact-first-name">Vorname</label>
+                        <input id="contact-first-name" type="text" maxlength="80" autocomplete="given-name" placeholder="Vorname">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-last-name">Nachname</label>
+                        <input id="contact-last-name" type="text" maxlength="80" autocomplete="family-name" placeholder="Nachname">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-nickname">Spitzname</label>
+                        <input id="contact-nickname" type="text" maxlength="80" placeholder="Spitzname">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-telegram">Telegram-Nummer</label>
+                        <input id="contact-telegram" type="text" maxlength="80" autocomplete="tel" placeholder="Telegram-Nummer">
+                    </div>
+                    <div class="form-group" style="flex: 100%;">
+                        <label for="contact-notes">Notiz</label>
+                        <textarea id="contact-notes" maxlength="5000" rows="3" placeholder="Notiz"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="submit" class="btn btn-success" id="contact-submit-btn">Kontakt speichern</button>
+                        <button type="button" class="btn btn-secondary" id="contact-cancel-btn" onclick="cancelContactEdit()" hidden>Abbrechen</button>
+                    </div>
+                </form>
+            </div>
+        </details>
+        <div class="table-container-scrollable" style="margin-top: 22px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Spitzname</th>
+                        <th>Telegram-Nummer</th>
+                        <th>Notiz</th>
+                        <th>Aktion</th>
+                    </tr>
+                </thead>
+                <tbody id="contacts-table-body">
+                    <tr><td colspan="5" style="color: var(--text-muted);">Kontakte werden geladen …</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <!-- TAB: MITGLIEDER -->
     <div id="tab-mitglieder" class="tab-content">
         <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 16px;">Zeigt automatisch alle bestehenden Benutzer-Logins. Rang und Notiz kannst du hier bearbeiten. Das Beitrittsdatum wird beim Anlegen des Benutzers automatisch gesetzt.</p>
@@ -1300,6 +1358,7 @@
 <script src="js/einkaufsliste.js"></script>
 <script src="js/herstellung.js"></script>
 <script src="js/notizen.js"></script>
+<script src="js/kontakte.js?v=20261014-1"></script>
 <script src="js/mitglieder.js"></script>
 <script src="js/profile.js?v=20260826-3"></script>
 <script src="js/main.js"></script>
