@@ -220,7 +220,8 @@
     // einem einzigen Reload zusammengefasst (Debounce), damit es nicht flackert.
     const LIVE_SYNC_TABLES = [
         'inventory', 'orders', 'archive', 'customer_prices', 'sales_prices',
-        'purchase_prices', 'recipes', 'notes', 'contacts', 'members', 'app_users',
+        'purchase_prices', 'recipes', 'notes', 'contacts', 'berufe_tabs',
+        'berufe_recipes', 'members', 'app_users',
         'app_user_tab_permissions', 'password_reset_requests', 'activity_log'
     ];
     let liveSyncChannel = null;
@@ -326,6 +327,10 @@
                 if (!refreshed) return;
                 if (table === 'contacts' && currentUser && canViewTab('kontakte')) {
                     await loadContacts();
+                }
+                if ((table === 'berufe_tabs' || table === 'berufe_recipes')
+                    && currentUser && canViewTab('berufe')) {
+                    await refreshBerufeData();
                 }
                 if (table === 'app_users' && currentUser && currentUser.isAdmin) {
                     await loadAppUsers();

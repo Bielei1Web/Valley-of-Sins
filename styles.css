@@ -3218,3 +3218,36 @@ html.theme-ready, html.theme-ready *, html.theme-ready *::before, html.theme-rea
 .log-action-pill.log-action-erstellt { color:var(--success-color); }
 .log-action-pill.log-action-geloescht { color:var(--danger-color); }
 .log-action-pill.log-action-bearbeitet { color:var(--primary-bright); }
+
+.berufe-workspace { display:flex; flex-direction:column; gap:16px; }
+.berufe-create-form { display:flex; align-items:end; flex-wrap:wrap; gap:12px; padding:16px; border:1px solid var(--border-color); border-radius:10px; background:var(--card-bg); }
+.berufe-create-form .form-group { flex:1 1 240px; margin:0; }
+.berufe-parent-tab .berufe-nav-chevron { margin-left:auto; font-size:1.2rem; line-height:1; transition:transform .15s ease; }
+.berufe-parent-tab[aria-expanded="true"] .berufe-nav-chevron { transform:rotate(90deg); }
+.berufe-subtabs { display:flex; flex-direction:column; gap:3px; padding:3px 0 6px 18px; border-left:1px solid var(--border-color); margin-left:20px; }
+.berufe-subtabs[hidden] { display:none !important; }
+.berufe-subtab { width:100%; padding:8px 10px; border:1px solid transparent; border-radius:7px; background:var(--tab-inactive-bg); color:var(--text-muted); font:inherit; font-size:.82rem; font-weight:600; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
+.berufe-subtab:hover, .berufe-subtab.active { border-color:var(--primary-color); background:var(--primary-soft); color:var(--primary-bright); }
+.berufe-subtab-row { display:flex; align-items:center; gap:4px; }
+.berufe-subtab-row .berufe-subtab { flex:1; min-width:0; }
+.berufe-subtab-delete { width:30px; height:34px; flex:0 0 30px; border:1px solid transparent; border-radius:7px; background:transparent; color:var(--danger-color); font-size:1.2rem; line-height:1; cursor:pointer; }
+.berufe-subtab-delete:hover { border-color:var(--danger-color); background:color-mix(in srgb, var(--danger-color) 12%, transparent); }
+.berufe-panel { min-height:180px; padding:20px; border:1px solid var(--border-color); border-radius:10px; background:var(--card-bg); }
+.berufe-panel h3 { margin:0 0 10px; }
+.berufe-panel p { margin:0; color:var(--text-muted); }
+.berufe-template-details { margin-top:16px; padding:16px; border:1px solid var(--border-color); border-radius:10px; background:var(--card-bg-raised); }
+.berufe-template-details[hidden] { display:none !important; }
+.berufe-template-details > summary { font-size:1.1rem; }
+.berufe-template-content { display:grid; gap:16px; }
+#berufe-recipe-create-area { padding:16px; border:1px solid var(--border-color); border-radius:8px; background:var(--card-bg-raised); }
+#berufe-recipe-create-area[hidden], #berufe-recipes-table-area[hidden] { display:none !important; }
+#berufe-recipe-create-area h4 { margin:0 0 14px; }
+.berufe-recipe-search { margin-bottom:0; }
+.berufe-workspace.berufe-search-first .berufe-recipe-search { order:-1; position:sticky; top:12px; z-index:20; }
+.berufe-workspace.berufe-search-first #berufe-panel { order:1; }
+.berufe-recipe-search h3 { margin:0 0 14px; }
+.berufe-recipe-search label { display:block; margin-bottom:8px; font-weight:600; }
+.berufe-recipe-search input { width:100%; min-height:42px; padding:10px 14px; border:1px solid var(--border-color); border-radius:7px; background:var(--input-bg); color:var(--text-color); font:inherit; }
+#berufe-recipe-search-results { margin-top:12px; }
+#berufe-recipe-search-results[hidden], #berufe-recipe-cancel-btn[hidden], #berufe-create-form[hidden], #berufe-status[hidden] { display:none !important; }
+.berufe-recipe-search-empty { margin:0; padding:12px; color:var(--text-muted); }

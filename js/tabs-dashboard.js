@@ -62,6 +62,8 @@
             updateUnseenBadges();
         } else if (tabName === 'kontakte') {
             loadContacts();
+        } else if (tabName === 'berufe') {
+            loadBerufeTab();
         }
     }
 

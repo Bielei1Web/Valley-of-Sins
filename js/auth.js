@@ -72,13 +72,14 @@
         { key: 'archiv', label: 'Bestellung Archiv' },
         { key: 'notizen', label: 'Notizen' },
         { key: 'kontakte', label: 'Kontakte' },
+        { key: 'berufe', label: 'Berufe' },
         { key: 'mitglieder', label: 'Mitglieder' }
     ];
     // Tabs, in denen es tatsächlich gespeicherte Löschaktionen gibt.
     // Diese Rechte sind bewusst unabhängig von „Bearbeiten“.
     const DELETE_PERMISSION_TABS = new Set([
         'lagerbestand', 'bestellungen', 'archiv', 'kunden',
-        'verkaufspreise', 'einkaufspreise', 'herstellung', 'notizen', 'kontakte'
+        'verkaufspreise', 'einkaufspreise', 'herstellung', 'notizen', 'kontakte', 'berufe'
     ]);
     const ADMIN_ONLY_TABS = new Set(['log', 'benutzer', 'avatarlogs']);
 
@@ -547,6 +548,15 @@
         if (currentUser.isSystemAdmin || !!(currentUser.specialPermissions && currentUser.specialPermissions.administrator_rechte)) return true;
         return !!(currentUser.specialPermissions && currentUser.specialPermissions[actionKey]);
     }
+
+    function canManageBerufe() {
+        return !!(currentUser && (
+            currentUser.isAdmin
+            || currentUser.isSystemAdmin
+            || canSpecialAction('administrator_rechte')
+        ));
+    }
+    window.canManageBerufe = canManageBerufe;
 
     function canEdit() {
         const active = document.querySelector('.tab-content.active');
