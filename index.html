@@ -61,7 +61,7 @@
                         </div>
                     </div>
                     <button type="submit" class="btn">Anmelden</button>
-                    <div class="login-switch">Passwort-Reset ist im Testprojekt vorerst deaktiviert.</div>
+                    <div class="login-switch"><a onclick="showForgotPasswordForm()">Passwort vergessen?</a></div>
                     <div class="login-switch">Noch kein Konto? <a onclick="showRegisterForm()">Registrieren</a></div>
                 </form>
 
@@ -131,7 +131,7 @@
                         </div>
                         <div class="login-field">
                             <label for="forgot-code">Reset-Code</label>
-                            <div class="login-input-wrap"><input type="text" id="forgot-code" inputmode="numeric" maxlength="8" autocomplete="one-time-code" placeholder="8-stelliger Code"></div>
+                            <div class="login-input-wrap"><input type="text" id="forgot-code" maxlength="24" autocomplete="one-time-code" placeholder="24-stelliger Code"></div>
                         </div>
                         <div class="login-field">
                             <label for="forgot-new-password">Neues Passwort</label>
@@ -1176,10 +1176,10 @@
                     <span id="password-reset-count" class="status-pill pending" style="display:none;">0 offen</span>
                 </span>
             </summary>
-            <div class="permission-help" style="margin:12px 0;">Hier erscheinen Passwort-vergessen-Anfragen. Erst nach deiner Freigabe kann der Benutzer sein Passwort selbst neu vergeben.</div>
+            <div class="permission-help" style="margin:12px 0;">Hier erscheinen Passwort-vergessen-Anfragen. Nach deiner Freigabe wird ein Reset-Code einmalig angezeigt, den du dem Benutzer außerhalb der App sicher mitteilst.</div>
             <div class="table-container-scrollable">
                 <table>
-                    <thead><tr><th>Benutzer</th><th>Reset-Code</th><th>Status</th><th>Angefordert</th><th>Aktion</th></tr></thead>
+                    <thead><tr><th>Benutzer</th><th>Code-Info</th><th>Status</th><th>Angefordert</th><th>Aktion</th></tr></thead>
                     <tbody id="password-reset-requests-body"></tbody>
                 </table>
             </div>

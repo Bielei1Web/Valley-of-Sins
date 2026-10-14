@@ -244,7 +244,12 @@
     let activePasswordResetRequestId = null;
 
     function generateResetCode() {
-        return String(Math.floor(10000000 + Math.random() * 90000000));
+        if (!window.crypto || typeof window.crypto.getRandomValues !== 'function') {
+            throw new Error('Sichere Code-Erzeugung wird von diesem Browser nicht unterstützt.');
+        }
+        const randomValues = new Uint8Array(12);
+        window.crypto.getRandomValues(randomValues);
+        return Array.from(randomValues, value => value.toString(16).padStart(2, '0')).join('');
     }
 
     async function handleForgotPassword(event) {
@@ -277,8 +282,7 @@
                 const user = { id: state.user_id, username: state.username };
                 const existing = state.request_id ? {
                     id: state.request_id,
-                    status: state.status,
-                    request_code: state.request_code
+                    status: state.status
                 } : null;
 
                 if (existing) {
@@ -1103,19 +1107,29 @@
                 : r.status === 'approved'
                     ? `<button class="btn" style="height:34px;font-size:.8rem;background-color:var(--card-bg-raised);color:var(--text-color);border:1px solid var(--border-color);" onclick="revokePasswordReset(${r.id})">Freigabe zurücknehmen</button>`
                     : `<span style="color:var(--text-muted);font-size:.8rem;">Abgeschlossen</span>`;
-            return `<tr><td>${renderUsernameWithAvatar(r.username || '-', null, { size: 'small' })}</td><td><span class="time-text" style="letter-spacing:1px;">${r.request_code || '-'}</span></td><td>${statusHtml}</td><td class="time-text">${created}</td><td>${actionHtml}</td></tr>`;
+            const codeStatus = r.status === 'approved' ? 'Code bei Freigabe einmalig angezeigt' : '-';
+            return `<tr><td>${renderUsernameWithAvatar(r.username || '-', null, { size: 'small' })}</td><td>${codeStatus}</td><td>${statusHtml}</td><td class="time-text">${created}</td><td>${actionHtml}</td></tr>`;
         }).join('');
     }
 
     async function approvePasswordReset(id) {
         if (!currentUser || !currentUser.isAdmin) return;
-        const { error } = await supabaseClient.from('password_reset_requests')
-            .update({ status: 'approved', approved_at: new Date().toISOString(), approved_by: currentUser.username })
-            .eq('id', id).eq('status', 'pending');
-        if (error) return showToast('Reset-Anfrage konnte nicht freigegeben werden: ' + error.message, 'danger');
-        if (typeof broadcastDataChange === 'function') await broadcastDataChange('password_reset_requests');
-        await loadPasswordResetRequests();
-        showToast('Die Passwort-Zurücksetzung wurde für den Benutzer freigegeben.', 'success', 'Passwort-Zurücksetzung freigegeben');
+        try {
+            const code = generateResetCode();
+            const { data: approved, error } = await supabaseClient.rpc('approve_password_reset', {
+                requested_id: id,
+                requested_code: code
+            });
+            if (error) return showToast('Reset-Anfrage konnte nicht freigegeben werden: ' + error.message, 'danger');
+            if (!approved) return showToast('Die Anfrage ist nicht mehr offen und wurde nicht freigegeben.', 'danger');
+            if (typeof broadcastDataChange === 'function') await broadcastDataChange('password_reset_requests');
+            await loadPasswordResetRequests();
+            window.prompt('Reset-Code einmalig kopieren und dem Benutzer sicher mitteilen:', code);
+            showToast('Freigegeben. Der Reset-Code wird nur einmal angezeigt; falls verloren, Freigabe zurücknehmen und erneut erteilen.', 'success', 'Passwort-Zurücksetzung freigegeben');
+        } catch (error) {
+            console.error('Reset-Anfrage konnte nicht sicher freigegeben werden:', error);
+            showToast(error instanceof Error ? error.message : 'Reset-Anfrage konnte nicht freigegeben werden.', 'danger');
+        }
     }
 
     async function revokePasswordReset(id) {
