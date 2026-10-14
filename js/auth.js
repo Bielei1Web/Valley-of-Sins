@@ -1083,9 +1083,9 @@
             console.error('Offene Passwort-Reset-Anfragen konnten nicht geprüft werden:', error.message);
             return;
         }
-        const count = (data || []).length;
+        const count = (data || []).filter(request => request.status === 'pending').length;
         updatePasswordResetBadge(count);
-        if (count) showToast(`${count} offene Passwort-Reset-Anfrage${count === 1 ? '' : 'n'} wartet auf deine Freigabe.`, 'info', 'Neue Admin-Aufgabe');
+        if (count) showToast(`${count} offene Passwort-Reset-Anfrage${count === 1 ? '' : 'n'} ${count === 1 ? 'wartet' : 'warten'} auf deine Freigabe.`, 'info', 'Neue Admin-Aufgabe');
     }
 
     function renderPasswordResetRequests(requests) {
