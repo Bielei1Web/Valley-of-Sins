@@ -2,7 +2,8 @@
     const ADMIN_USERNAME = 'admin';
     const AUTH_STORAGE_KEY = 'rs_auth_session';
     const APP_NAME_STORAGE_KEY = 'rs_app_name';
-    const DEFAULT_APP_NAME = 'Rudis Schmiede';
+    const DEFAULT_APP_NAME = 'Valley of Sins';
+    const LEGACY_DEFAULT_APP_NAME = 'Rudis Schmiede';
     const AUTH_EMAIL_DOMAIN = 'bksinlttbejnbwasxfff.supabase.co';
     function getAuthEmailForUsername(username) {
         const normalized = String(username || '').trim().toLowerCase();
@@ -34,7 +35,12 @@
 
     function getStoredAppName() {
         try {
-            return localStorage.getItem(APP_NAME_STORAGE_KEY) || DEFAULT_APP_NAME;
+            const storedName = localStorage.getItem(APP_NAME_STORAGE_KEY);
+            if (storedName === LEGACY_DEFAULT_APP_NAME) {
+                localStorage.setItem(APP_NAME_STORAGE_KEY, DEFAULT_APP_NAME);
+                return DEFAULT_APP_NAME;
+            }
+            return storedName || DEFAULT_APP_NAME;
         } catch (e) {
             return DEFAULT_APP_NAME;
         }

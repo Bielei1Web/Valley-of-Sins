@@ -12,7 +12,7 @@
                     color: var(--primary-color);
                 }
         :root {
-            /* Schmiede-Palette: verfeinertes kaltes Eisen + Glut */
+            /* Eisen- und Glutpalette */
             --bg-color: #120e0a;
             --bg-color-soft: #1a1410;
             --card-bg: #201810;
