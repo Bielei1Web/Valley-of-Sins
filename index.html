@@ -131,7 +131,7 @@
                         </div>
                         <div class="login-field">
                             <label for="forgot-code">Reset-Code</label>
-                            <div class="login-input-wrap"><input type="text" id="forgot-code" maxlength="24" autocomplete="one-time-code" placeholder="24-stelliger Code"></div>
+                            <div class="login-input-wrap"><input type="text" id="forgot-code" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code" placeholder="6-stelliger Code"></div>
                         </div>
                         <div class="login-field">
                             <label for="forgot-new-password">Neues Passwort</label>
@@ -1176,7 +1176,7 @@
                     <span id="password-reset-count" class="status-pill pending" style="display:none;">0 offen</span>
                 </span>
             </summary>
-            <div class="permission-help" style="margin:12px 0;">Hier erscheinen Passwort-vergessen-Anfragen. Nach deiner Freigabe wird ein Reset-Code einmalig angezeigt, den du dem Benutzer außerhalb der App sicher mitteilst.</div>
+            <div class="permission-help" style="margin:12px 0;">Hier erscheinen Passwort-vergessen-Anfragen. Nach der Freigabe steht der sechsstellige Code in „Code-Info“ und bleibt bis zum Ablauf oder zur erfolgreichen Zurücksetzung sichtbar. Teile ihn dem Benutzer sicher mit.</div>
             <div class="table-container-scrollable">
                 <table>
                     <thead><tr><th>Benutzer</th><th>Code-Info</th><th>Status</th><th>Angefordert</th><th>Aktion</th></tr></thead>

@@ -247,9 +247,13 @@
         if (!window.crypto || typeof window.crypto.getRandomValues !== 'function') {
             throw new Error('Sichere Code-Erzeugung wird von diesem Browser nicht unterstützt.');
         }
-        const randomValues = new Uint8Array(12);
-        window.crypto.getRandomValues(randomValues);
-        return Array.from(randomValues, value => value.toString(16).padStart(2, '0')).join('');
+        const randomValues = new Uint32Array(1);
+        const range = 0x100000000;
+        const limit = Math.floor(range / 1000000) * 1000000;
+        do {
+            window.crypto.getRandomValues(randomValues);
+        } while (randomValues[0] >= limit);
+        return String(randomValues[0] % 1000000).padStart(6, '0');
     }
 
     async function handleForgotPassword(event) {
@@ -1051,11 +1055,12 @@
 
     async function loadPasswordResetRequests() {
         if (!currentUser || !currentUser.isAdmin) return;
-        const { data, error } = await supabaseClient.from('password_reset_requests').select('*').order('created_at', { ascending: false });
+        const { data, error } = await supabaseClient.rpc('get_admin_password_reset_requests');
         const body = document.getElementById('password-reset-requests-body');
         if (error) {
             updatePasswordResetBadge(0);
-            if (body) body.innerHTML = `<tr><td colspan="5" style="color:var(--danger-color);padding:16px;">Die Tabelle "password_reset_requests" fehlt oder ist nicht erreichbar.</td></tr>`;
+            console.error('Passwort-Reset-Anfragen konnten nicht geladen werden:', error.message);
+            if (body) body.innerHTML = `<tr><td colspan="5" style="color:var(--danger-color);padding:16px;">Passwort-Reset-Anfragen konnten nicht geladen werden: ${error.message}</td></tr>`;
             return;
         }
         updatePasswordResetBadge((data || []).filter(request => request.status === 'pending').length);
@@ -1073,10 +1078,11 @@
     async function notifyPendingPasswordResetRequests() {
         if (!currentUser || !currentUser.isAdmin) return;
         const { data, error } = await supabaseClient
-            .from('password_reset_requests')
-            .select('id')
-            .eq('status', 'pending');
-        if (error) return;
+            .rpc('get_admin_password_reset_requests');
+        if (error) {
+            console.error('Offene Passwort-Reset-Anfragen konnten nicht geprüft werden:', error.message);
+            return;
+        }
         const count = (data || []).length;
         updatePasswordResetBadge(count);
         if (count) showToast(`${count} offene Passwort-Reset-Anfrage${count === 1 ? '' : 'n'} wartet auf deine Freigabe.`, 'info', 'Neue Admin-Aufgabe');
@@ -1107,7 +1113,9 @@
                 : r.status === 'approved'
                     ? `<button class="btn" style="height:34px;font-size:.8rem;background-color:var(--card-bg-raised);color:var(--text-color);border:1px solid var(--border-color);" onclick="revokePasswordReset(${r.id})">Freigabe zurücknehmen</button>`
                     : `<span style="color:var(--text-muted);font-size:.8rem;">Abgeschlossen</span>`;
-            const codeStatus = r.status === 'approved' ? 'Code bei Freigabe einmalig angezeigt' : '-';
+            const codeStatus = r.status === 'approved'
+                ? (r.request_code || (r.expires_at && new Date(r.expires_at) <= new Date() ? 'Abgelaufen' : 'Code nicht verfügbar'))
+                : '-';
             return `<tr><td>${renderUsernameWithAvatar(r.username || '-', null, { size: 'small' })}</td><td>${codeStatus}</td><td>${statusHtml}</td><td class="time-text">${created}</td><td>${actionHtml}</td></tr>`;
         }).join('');
     }
@@ -1124,8 +1132,7 @@
             if (!approved) return showToast('Die Anfrage ist nicht mehr offen und wurde nicht freigegeben.', 'danger');
             if (typeof broadcastDataChange === 'function') await broadcastDataChange('password_reset_requests');
             await loadPasswordResetRequests();
-            window.prompt('Reset-Code einmalig kopieren und dem Benutzer sicher mitteilen:', code);
-            showToast('Freigegeben. Der Reset-Code wird nur einmal angezeigt; falls verloren, Freigabe zurücknehmen und erneut erteilen.', 'success', 'Passwort-Zurücksetzung freigegeben');
+            showToast('Der sechsstellige Reset-Code steht jetzt in der Spalte „Code-Info“. Teile ihn dem Benutzer sicher mit.', 'success', 'Passwort-Zurücksetzung freigegeben');
         } catch (error) {
             console.error('Reset-Anfrage konnte nicht sicher freigegeben werden:', error);
             showToast(error instanceof Error ? error.message : 'Reset-Anfrage konnte nicht freigegeben werden.', 'danger');
@@ -1134,10 +1141,11 @@
 
     async function revokePasswordReset(id) {
         if (!currentUser || !currentUser.isAdmin) return;
-        const { error } = await supabaseClient.from('password_reset_requests')
-            .update({ status: 'pending', approved_at: null, approved_by: null })
-            .eq('id', id).eq('status', 'approved');
+        const { data: revoked, error } = await supabaseClient.rpc('revoke_password_reset', {
+            requested_id: id
+        });
         if (error) return showToast('Freigabe konnte nicht zurückgenommen werden: ' + error.message, 'danger');
+        if (!revoked) return showToast('Die Freigabe ist nicht mehr aktiv.', 'danger');
         if (typeof broadcastDataChange === 'function') await broadcastDataChange('password_reset_requests');
         await loadPasswordResetRequests();
         showToast('Die Freigabe wurde zurückgenommen. Der Benutzer kann noch kein neues Passwort setzen.', 'success', 'Passwort-Zurücksetzung geändert');
