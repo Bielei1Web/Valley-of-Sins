@@ -1,15 +1,36 @@
+    function getCustomerPriceSelectableItems() {
+        const itemsByName = new Map();
+        (recipesList || []).forEach(recipe => {
+            if (!recipe || !recipe.outputName) return;
+            const name = recipe.outputName.trim();
+            itemsByName.set(name.toLocaleLowerCase('de'), name);
+        });
+        (inventoryList || []).forEach(item => {
+            if (!item || !item.name) return;
+            const name = item.name.trim();
+            const key = name.toLocaleLowerCase('de');
+            if (!itemsByName.has(key)) itemsByName.set(key, name);
+        });
+        return [...itemsByName.values()].sort((a, b) => a.localeCompare(b, 'de'));
+    }
+
     function updateCustomerPricesRecipeSelect() {
         const selects = document.querySelectorAll('.cust-price-name-select');
-        const sortedRecipes = [...recipesList].sort((a, b) => a.outputName.localeCompare(b.outputName, 'de'));
+        const items = getCustomerPriceSelectableItems();
 
         selects.forEach(select => {
             const currentValue = select.value;
-            select.innerHTML = '<option value="" disabled selected>-- Artikel wählen --</option>';
-            sortedRecipes.forEach(rec => {
+            select.innerHTML = '';
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = '-- Artikel aus Rezepten / Lager auswählen --';
+            placeholder.selected = !currentValue;
+            select.appendChild(placeholder);
+            items.forEach(name => {
                 const opt = document.createElement('option');
-                opt.value = rec.outputName;
-                opt.innerText = rec.outputName;
-                if (rec.outputName === currentValue) opt.selected = true;
+                opt.value = name;
+                opt.textContent = name;
+                if (name === currentValue) opt.selected = true;
                 select.appendChild(opt);
             });
         });
@@ -29,15 +50,17 @@
         div.className = 'cust-price-item-row';
         div.style.cssText = 'display: flex; gap: 8px; align-items: center; margin-bottom: 8px;';
         
-        const sortedRecipes = [...recipesList].sort((a, b) => a.outputName.localeCompare(b.outputName, 'de'));
-        let optionsHtml = '<option value="" disabled selected>-- Artikel wählen --</option>';
-        sortedRecipes.forEach(rec => {
-            const isSelected = rec.outputName === defaultName ? 'selected' : '';
-            optionsHtml += `<option value="${rec.outputName}" ${isSelected}>${rec.outputName}</option>`;
+        const items = getCustomerPriceSelectableItems();
+        let optionsHtml = '<option value="">-- Artikel aus Rezepten / Lager auswählen --</option>';
+        items.forEach(name => {
+            const escapedName = escapeHtml(name);
+            const isSelected = name.toLocaleLowerCase('de') === defaultName.toLocaleLowerCase('de') ? 'selected' : '';
+            optionsHtml += `<option value="${escapedName}" ${isSelected}>${escapedName}</option>`;
         });
 
         div.innerHTML = `
-            <select class="cust-price-name-select" onchange="handleCustPriceRecipeSelectChange(this)" required style="flex:2;">
+            <input type="text" class="cust-price-name-input" value="${escapeHtml(defaultName)}" placeholder="Artikel manuell eintragen..." oninput="handleCustPriceTextInput(this)" required style="flex:2;" />
+            <select class="cust-price-name-select" onchange="handleCustPriceRecipeSelectChange(this)" aria-label="Artikel aus Rezepten oder Lager auswählen" style="flex:2;">
                 ${optionsHtml}
             </select>
             <input type="number" step="0.01" class="cust-price-val-input" placeholder="Preis ($)" min="0" value="${defaultPrice}" required style="flex:1; max-width: 130px;" />
@@ -49,13 +72,26 @@
     function handleCustPriceRecipeSelectChange(selectEl) {
         const row = selectEl.closest('.cust-price-item-row');
         if (!row) return;
+        const nameInput = row.querySelector('.cust-price-name-input');
         const priceInput = row.querySelector('.cust-price-val-input');
+        if (nameInput && selectEl.value) nameInput.value = selectEl.value;
         if (priceInput && selectEl.value) {
-            const found = salesPricesList.find(sp => sp.name.toLowerCase() === selectEl.value.toLowerCase());
+            const found = (salesPricesList || []).find(sp => sp.name.toLowerCase() === selectEl.value.toLowerCase());
             if (found) {
                 priceInput.value = found.price.toFixed(2);
             }
         }
+    }
+
+    function handleCustPriceTextInput(inputEl) {
+        const row = inputEl.closest('.cust-price-item-row');
+        if (!row) return;
+        const select = row.querySelector('.cust-price-name-select');
+        if (!select) return;
+        const matchingOption = [...select.options].find(option =>
+            option.value.toLocaleLowerCase('de') === inputEl.value.trim().toLocaleLowerCase('de')
+        );
+        select.value = matchingOption ? matchingOption.value : '';
     }
 
     function renderCustomerPricesTable() {
@@ -82,7 +118,12 @@
         }
 
         sortedList.forEach(item => {
-            const costPerUnit = getRecipeCostPerUnit(item.name);
+            const hasRecipe = (recipesList || []).some(recipe =>
+                recipe.outputName && recipe.outputName.toLocaleLowerCase('de') === String(item.name).toLocaleLowerCase('de')
+            );
+            const costPerUnit = hasRecipe
+                ? Number(getRecipeCostPerUnit(item.name)) || 0
+                : Number(getLowestPurchaseCost(item.name)) || 0;
             const costClass = costPerUnit === 0 ? "current-cost zero-cost" : "current-cost";
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -179,14 +220,17 @@
         let successCount = 0;
 
         for (const row of rows) {
-            const selectEl = row.querySelector('.cust-price-name-select');
+            const nameInput = row.querySelector('.cust-price-name-input');
             const valInput = row.querySelector('.cust-price-val-input');
-            if (!selectEl || !valInput) continue;
+            if (!nameInput || !valInput) continue;
 
-            const name = capitalizeText(selectEl.value.trim());
+            const name = capitalizeText(nameInput.value.trim());
             const price = parseFloat(valInput.value);
 
-            if (!name || isNaN(price)) continue;
+            if (!name || isNaN(price) || price < 0) {
+                alert("Bitte für jede Position einen Artikel und einen gültigen Sonderpreis ab 0 eingeben.");
+                return;
+            }
 
             const existing = customerPricesList.find(i => (i.customerName || "").toLowerCase() === customerName.toLowerCase() && i.name.toLowerCase() === name.toLowerCase());
 
