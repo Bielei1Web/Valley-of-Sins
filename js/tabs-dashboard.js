@@ -251,8 +251,7 @@
 
     function renderDashboard() {
         const grid = document.getElementById('dashboard-kpi-grid');
-        const lowStockList = document.getElementById('dashboard-lowstock-list');
-        if (!grid || !lowStockList) return;
+        if (!grid) return;
 
         updateUnseenBadges();
 
@@ -315,20 +314,6 @@
             </div>
         `;
 
-        const warnItems = inventoryList
-            .filter(i => i.quantity < LOW_STOCK_THRESHOLD)
-            .sort((a, b) => a.quantity - b.quantity);
-
-        if (warnItems.length === 0) {
-            lowStockList.innerHTML = `<div class="dashboard-empty">Aktuell keine Engpässe – alle Bestände über dem Schwellenwert.</div>`;
-        } else {
-            lowStockList.innerHTML = warnItems.map(item => {
-                const badge = item.quantity === 0
-                    ? `<span class="stock-badge stock-badge-critical">Kritisch</span>`
-                    : `<span class="stock-badge stock-badge-low">Niedrig</span>`;
-                return `<div class="dashboard-list-row"><span>${item.name}</span><span>${item.quantity} Stk. ${badge}</span></div>`;
-            }).join('');
-        }
     }
 
     // ============ PINNWAND (Übersicht) ============
