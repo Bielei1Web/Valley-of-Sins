@@ -84,13 +84,22 @@
     async function handleAddStockItem(event) {
         event.preventDefault();
         const nameInput = document.getElementById('stock-add-name');
+        const customNameInput = document.getElementById('stock-add-custom-name');
         const qtyInput = document.getElementById('stock-add-qty');
-        const name = capitalizeText(nameInput.value.trim());
+        const name = capitalizeText((customNameInput.value.trim() || nameInput.value.trim()));
         const qty = parseInt(qtyInput.value, 10);
-        if (!name || isNaN(qty)) return;
+        if (!name) {
+            showToast('Bitte wähle einen vorhandenen Artikel oder gib einen neuen Namen ein.', 'danger');
+            return;
+        }
+        if (isNaN(qty) || qty < 0) {
+            showToast('Bitte gib einen gültigen Anfangsbestand ein.', 'danger');
+            return;
+        }
 
         const updatedTime = getCurrentTimeString();
         const existing = inventoryList.find(i => i.name.toLowerCase() === name.toLowerCase());
+        let saveError = null;
 
         if (existing) {
             const oldQty = existing.quantity;
@@ -104,7 +113,7 @@
                 existing.stockupdated = updatedTime;
                 if (typeof broadcastDataChange === 'function') await broadcastDataChange('inventory');
                 logActivity('Lagerbestand', `Bestand von "${name}" geändert: ${oldQty} → ${qty} Stk.`, `Artikel: ${name}\nBestand: ${oldQty} → ${qty} Stk.`);
-            }
+            } else saveError = error;
         } else {
             const { data, error } = await supabaseClient
                 .from('inventory')
@@ -115,9 +124,15 @@
                 inventoryList.push(data[0]);
                 if (typeof broadcastDataChange === 'function') await broadcastDataChange('inventory');
                 logActivity('Lagerbestand', `Neuer Artikel "${name}" mit Bestand ${qty} Stk. angelegt`, `Artikel: ${name}\nAnfangsbestand: ${qty} Stk.`);
-            }
+            } else saveError = error || new Error('Der Artikel wurde nicht gespeichert.');
+        }
+        if (saveError) {
+            console.error('Lagerartikel konnte nicht gespeichert werden:', saveError);
+            showToast('Lagerartikel konnte nicht gespeichert werden: ' + saveError.message, 'danger');
+            return;
         }
         nameInput.value = '';
+        customNameInput.value = '';
         qtyInput.value = '';
         renderStockTable();
         renderRecipes();
