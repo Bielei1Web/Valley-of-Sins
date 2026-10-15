@@ -3,63 +3,105 @@
         if (!tbody) return;
         tbody.innerHTML = '';
 
-        if (recipesList.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">Keine Rezepte vorhanden. Bitte erst im Tab „Herstellung“ Rezepte anlegen.</td></tr>`;
+        const products = getCalculatedPriceProducts();
+        if (products.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">Keine Rezepte oder Lagerartikel vorhanden.</td></tr>`;
             return;
         }
 
-        const sortedRecipes = [...recipesList].sort((a, b) => a.outputName.localeCompare(b.outputName, 'de'));
-
-        sortedRecipes.forEach(recipe => {
-            let costPerUnit = getRecipeCostPerUnit(recipe.outputName);
-            let margin = recipeMargins[recipe.id] !== undefined ? recipeMargins[recipe.id] : 20;
+        products.forEach(product => {
+            const costPerUnit = product.recipe
+                ? getRecipeCostPerUnit(product.name)
+                : getLowestPurchaseCost(product.name);
+            const margin = recipeMargins[product.marginKey] !== undefined ? recipeMargins[product.marginKey] : 20;
             let calculatedPrice = costPerUnit * (1 + (margin / 100));
 
-            const isZero = recipeHasZeroCost(recipe.outputName);
+            const isZero = product.recipe ? recipeHasZeroCost(product.name) : costPerUnit === 0;
             const costClass = isZero ? "current-cost zero-cost" : "current-cost";
             const nameColorStyle = isZero ? "color: var(--danger-color) !important;" : "color: var(--accent-blue);";
 
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
+            const row = document.createElement('tr');
+            row.innerHTML = `
                 <td>
                     <div class="tooltip-container">
-                        <span class="material-name" style="${nameColorStyle} border-bottom: 1px dotted currentColor;">${recipe.outputName}</span>
-                        <div class="tooltip-text">${getRecipeTooltipHtml(recipe.outputName)}</div>
-                        <span style="font-size: 0.85rem; color: var(--accent-green); font-weight: 600; margin-left: 8px;">(${recipe.outputQty} Stk.)</span>
+                        <span class="material-name" style="${nameColorStyle} border-bottom: 1px dotted currentColor;"></span>
+                        <div class="tooltip-text">${getRecipeTooltipHtml(product.name)}</div>
+                        <span class="calculated-price-product-meta" style="font-size: 0.85rem; color: var(--accent-green); font-weight: 600; margin-left: 8px;"></span>
                     </div>
                 </td>
                 <td><span class="${costClass}">$${costPerUnit.toFixed(2)}</span></td>
                 <td>
                     <div class="adjust-box">
-                        <input type="number" id="margin-input-${recipe.id}" value="${margin}" step="1" oninput="updateCalculatedPriceRow(${recipe.id})" style="width: 90px;" /> %
+                        <input type="number" class="calculated-price-margin" value="${margin}" step="1" style="width: 90px;" /> %
                     </div>
                 </td>
-                <td><span id="calc-price-display-${recipe.id}" class="current-price">$${calculatedPrice.toFixed(2)}</span></td>
+                <td><span class="calc-price-display current-price">$${calculatedPrice.toFixed(2)}</span></td>
                 <td>
-                    <button class="btn btn-success" onclick="applyCalculatedPrice('${recipe.outputName}', ${recipe.id})" style="height: 38px; font-size: 0.85rem;">Als Standard-VK übernehmen</button>
+                    <button type="button" class="btn btn-success apply-calculated-price" style="height: 38px; font-size: 0.85rem;">Als Standard-VK übernehmen</button>
                 </td>
             `;
-            tbody.appendChild(tr);
+            row.querySelector('.material-name').textContent = product.name;
+            row.querySelector('.calculated-price-product-meta').textContent = product.recipe
+                ? `(${product.recipe.outputQty} Stk. je Rezept${product.inventory ? ` · Lagerbestand: ${product.inventory.quantity} Stk.` : ''})`
+                : `(Lagerbestand: ${product.inventory.quantity} Stk.)`;
+            const marginInput = row.querySelector('.calculated-price-margin');
+            marginInput.id = `margin-input-${product.marginKey}`;
+            marginInput.addEventListener('input', () => updateCalculatedPriceRow(product.marginKey, product.name, product.recipe));
+            row.querySelector('.calc-price-display').id = `calc-price-display-${product.marginKey}`;
+            row.querySelector('.apply-calculated-price').addEventListener('click', () => {
+                applyCalculatedPrice(product.name, product.marginKey);
+            });
+            tbody.appendChild(row);
         });
     }
 
-    function updateCalculatedPriceRow(recipeId) {
-        const recipe = recipesList.find(r => r.id === recipeId);
-        const marginInput = document.getElementById(`margin-input-${recipeId}`);
-        const displayEl = document.getElementById(`calc-price-display-${recipeId}`);
-        if (!recipe || !marginInput || !displayEl) return;
+    function getCalculatedPriceProducts() {
+        const productsByName = new Map();
+        (recipesList || []).forEach(recipe => {
+            if (!recipe || !recipe.outputName) return;
+            const name = recipe.outputName.trim();
+            productsByName.set(name.toLocaleLowerCase('de'), {
+                name,
+                recipe,
+                inventory: null,
+                marginKey: recipe.id
+            });
+        });
+        (inventoryList || []).forEach(item => {
+            if (!item || !item.name) return;
+            const name = item.name.trim();
+            const key = name.toLocaleLowerCase('de');
+            const existingProduct = productsByName.get(key);
+            if (existingProduct) {
+                existingProduct.inventory = item;
+            } else {
+                productsByName.set(key, {
+                    name,
+                    recipe: null,
+                    inventory: item,
+                    marginKey: `inventory-${item.id}`
+                });
+            }
+        });
+        return [...productsByName.values()].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+    }
+
+    function updateCalculatedPriceRow(marginKey, itemName, recipe) {
+        const marginInput = document.getElementById(`margin-input-${marginKey}`);
+        const displayEl = document.getElementById(`calc-price-display-${marginKey}`);
+        if (!marginInput || !displayEl) return;
 
         let margin = parseFloat(marginInput.value);
         if (isNaN(margin)) margin = 0;
-        recipeMargins[recipeId] = margin;
+        recipeMargins[marginKey] = margin;
 
-        let costPerUnit = getRecipeCostPerUnit(recipe.outputName);
+        const costPerUnit = recipe ? getRecipeCostPerUnit(itemName) : getLowestPurchaseCost(itemName);
         let calculatedPrice = costPerUnit * (1 + (margin / 100));
         displayEl.innerText = `$${calculatedPrice.toFixed(2)}`;
     }
 
-    async function applyCalculatedPrice(itemName, recipeId) {
-        const displayEl = document.getElementById(`calc-price-display-${recipeId}`);
+    async function applyCalculatedPrice(itemName, marginKey) {
+        const displayEl = document.getElementById(`calc-price-display-${marginKey}`);
         if (!displayEl) return;
         const priceVal = parseFloat(displayEl.innerText.replace('$', ''));
         if (isNaN(priceVal)) return;

@@ -239,20 +239,30 @@
 		
         const existingNames = new Set(salesPricesList.map(sp => sp.name.toLowerCase()));
 
-        let sortedRecipes = [...recipesList].sort((a, b) => a.outputName.localeCompare(b.outputName, 'de'));
+        const itemsByName = new Map();
+        [...recipesList]
+            .filter(recipe => recipe && recipe.outputName)
+            .forEach(recipe => itemsByName.set(recipe.outputName.trim().toLocaleLowerCase('de'), recipe.outputName.trim()));
+        [...inventoryList]
+            .filter(item => item && item.name)
+            .forEach(item => {
+                const key = item.name.trim().toLocaleLowerCase('de');
+                if (!itemsByName.has(key)) itemsByName.set(key, item.name.trim());
+            });
+        let sortedItems = [...itemsByName.values()].sort((a, b) => a.localeCompare(b, 'de'));
 
         if (hideCheckbox && hideCheckbox.checked) {
-            sortedRecipes = sortedRecipes.filter(rec => !existingNames.has(rec.outputName.toLowerCase()));
+            sortedItems = sortedItems.filter(name => !existingNames.has(name.toLowerCase()));
         }
 		
-        selectEl.innerHTML = '<option value="">-- Kein Rezept gewählt --</option>';
-        sortedRecipes.forEach(rec => {
+        selectEl.innerHTML = '<option value="">-- Kein Artikel gewählt --</option>';
+        sortedItems.forEach(name => {
             const opt = document.createElement('option');
-            opt.value = rec.outputName;
-            opt.innerText = rec.outputName;
+            opt.value = name;
+            opt.innerText = name;
             selectEl.appendChild(opt);
         });
-        selectEl.value = sortedRecipes.some(r => r.outputName === currentSelected) ? currentSelected : "";
+        selectEl.value = sortedItems.includes(currentSelected) ? currentSelected : "";
     }
 
     function handleSalesPriceSelectChange() {

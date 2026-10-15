@@ -778,15 +778,15 @@
         <details>
             <summary>Automatische Verkaufspreise (Rechner)</summary>
             <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; margin-top: 10px;">
-                Hier werden die Kosten für Rezepte ermittelt. Trage deinen gewünschten Gewinnaufschlag in Prozent ein, um den Verkaufspreis automatisch zu berechnen.
+                Für Rezepte werden die Herstellungskosten, für reine Lagerartikel der günstigste Einkaufspreis als Grundlage verwendet. Trage den gewünschten Gewinnaufschlag ein.
             </div>
 
             <div class="table-container-scrollable">
                 <table>
                     <thead>
                         <tr>
-                            <th>Endprodukt (aus Rezepten)</th>
-                            <th>Herstellungskosten (Stk.)</th>
+                            <th>Artikel</th>
+                            <th>Herstellungs-/Einkaufskosten (Stk.)</th>
                             <th>Gewinn-Marge (%)</th>
                             <th>Berechneter VK ($)</th>
                             <th>Aktion</th>
@@ -815,9 +815,9 @@
                         <input type="text" id="price-add-name" placeholder="Namen manuell eintippen..." oninput="handleSalesPriceTextInput()" />
                     </div>
                     <div class="form-group">
-                        <label for="price-add-select">Oder Rezept aus Herstellung wählen</label>
+                        <label for="price-add-select">Oder Artikel aus Rezepten / Lager wählen</label>
                         <select id="price-add-select" onchange="handleSalesPriceSelectChange()">
-                            <option value="">-- Kein Rezept gewählt --</option>
+                            <option value="">-- Kein Artikel gewählt --</option>
                         </select>
                     </div>
                     <div class="form-group" style="max-width: 200px;">

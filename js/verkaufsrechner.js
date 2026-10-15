@@ -18,17 +18,45 @@ function getSalesCalculatorPrice(itemName) {
     return priceItem ? Number(priceItem.price) || 0 : 0;
 }
 
+function getSalesCalculatorItemCost(itemName) {
+    if (typeof getRecipeCostPerUnit === 'function') {
+        const recipeCost = Number(getRecipeCostPerUnit(itemName)) || 0;
+        if (recipeCost > 0 || (recipesList || []).some(recipe =>
+            recipe.outputName && recipe.outputName.toLowerCase() === String(itemName).toLowerCase()
+        )) {
+            return recipeCost;
+        }
+    }
+    return typeof getLowestPurchaseCost === 'function'
+        ? Number(getLowestPurchaseCost(itemName)) || 0
+        : 0;
+}
+
 function getSalesCalculatorProducts() {
-    const seen = new Set();
-    return [...(recipesList || [])]
+    const productsByName = new Map();
+    [...(recipesList || [])]
         .filter(recipe => recipe && recipe.outputName)
-        .filter(recipe => {
-            const key = recipe.outputName.trim().toLowerCase();
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
-        })
-        .sort((a, b) => a.outputName.localeCompare(b.outputName, 'de'));
+        .forEach(recipe => {
+            const name = recipe.outputName.trim();
+            productsByName.set(name.toLocaleLowerCase('de'), {
+                name,
+                recipe,
+                inventory: null
+            });
+        });
+    [...(inventoryList || [])]
+        .filter(item => item && item.name)
+        .forEach(item => {
+            const name = item.name.trim();
+            const key = name.toLocaleLowerCase('de');
+            const existingProduct = productsByName.get(key);
+            if (existingProduct) {
+                existingProduct.inventory = item;
+            } else {
+                productsByName.set(key, { name, recipe: null, inventory: item });
+            }
+        });
+    return [...productsByName.values()].sort((a, b) => a.name.localeCompare(b.name, 'de'));
 }
 
 function renderSalesCalculatorProducts() {
@@ -40,27 +68,32 @@ function renderSalesCalculatorProducts() {
     if (countEl) countEl.textContent = `${products.length} Artikel`;
 
     if (!products.length) {
-        container.innerHTML = '<div class="sales-calculator-empty">Keine herstellbaren Artikel vorhanden. Lege zuerst ein Rezept im Tab „Herstellung“ an.</div>';
+        container.innerHTML = '<div class="sales-calculator-empty">Keine Artikel im Lager und keine Rezepte vorhanden.</div>';
         return;
     }
 
-    container.innerHTML = products.map((recipe, index) => {
-        const price = getSalesCalculatorPrice(recipe.outputName);
-        const cost = typeof getRecipeCostPerUnit === 'function' ? getRecipeCostPerUnit(recipe.outputName) : 0;
+    container.innerHTML = products.map((product, index) => {
+        const price = getSalesCalculatorPrice(product.name);
+        const cost = product.recipe
+            ? (typeof getRecipeCostPerUnit === 'function' ? getRecipeCostPerUnit(product.name) : 0)
+            : (typeof getLowestPurchaseCost === 'function' ? getLowestPurchaseCost(product.name) : 0);
         const hasPrice = price > 0;
+        const meta = product.recipe
+            ? `${product.recipe.outputQty || 1} Stk. je Rezept${product.inventory ? ` · Lagerbestand: ${product.inventory.quantity} Stk.` : ''}`
+            : `Lagerbestand: ${product.inventory.quantity} Stk.`;
         return `
             <button type="button" class="sales-product-card" data-sales-product-index="${index}">
-                <span class="sales-product-name">${escapeSalesCalculatorHtml(recipe.outputName)}</span>
-                <span class="sales-product-meta">${recipe.outputQty || 1} Stk. je Rezept</span>
+                <span class="sales-product-name">${escapeSalesCalculatorHtml(product.name)}</span>
+                <span class="sales-product-meta">${escapeSalesCalculatorHtml(meta)}</span>
                 <span class="sales-product-price ${hasPrice ? '' : 'sales-price-missing'}">${hasPrice ? `$${price.toFixed(2)} / Stk.` : 'Kein VK hinterlegt'}</span>
-                ${cost > 0 ? `<span class="sales-product-cost">Herstellung: $${cost.toFixed(2)}</span>` : ''}
+                ${cost > 0 ? `<span class="sales-product-cost">${product.recipe ? 'Herstellung' : 'Einkauf'}: $${cost.toFixed(2)}</span>` : ''}
             </button>`;
     }).join('');
 
     container.querySelectorAll('[data-sales-product-index]').forEach(card => {
         card.addEventListener('click', () => {
             const product = products[Number(card.dataset.salesProductIndex)];
-            if (product) openSalesQuantityModal(product.outputName);
+            if (product) openSalesQuantityModal(product.name);
         });
     });
 }
@@ -171,7 +204,7 @@ function getSalesCalculatorTotals() {
     const items = Object.values(salesCalculatorCart);
     const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
     const productionCostTotal = items.reduce((sum, item) => {
-        const unitCost = typeof getRecipeCostPerUnit === 'function' ? Number(getRecipeCostPerUnit(item.name)) || 0 : 0;
+        const unitCost = getSalesCalculatorItemCost(item.name);
         return sum + item.quantity * unitCost;
     }, 0);
 
@@ -312,7 +345,7 @@ if (button) button.disabled = true;
 
 try {
     const archivedItems = items.map(item => {
-        const unitCost = typeof getRecipeCostPerUnit === 'function' ? Number(getRecipeCostPerUnit(item.name)) || 0 : 0;
+        const unitCost = getSalesCalculatorItemCost(item.name);
         return {
             name: item.name,
             qty: item.quantity,
