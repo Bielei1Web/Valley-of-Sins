@@ -460,10 +460,14 @@
                 <h2>+ Neuen Artikel hinzufügen</h2>
                 <form class="add-form" onsubmit="handleAddStockItem(event)">
                     <div class="form-group">
-                        <label for="stock-add-name">Artikel / Rohstoff aus Rezepten auswählen</label>
-                        <select id="stock-add-name" required>
+                        <label for="stock-add-name">Vorhandenen Artikel / Rohstoff auswählen</label>
+                        <select id="stock-add-name" onchange="document.getElementById('stock-add-custom-name').value = ''">
                             <option value="" disabled selected>-- Artikel / Rohstoff wählen --</option>
                         </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="stock-add-custom-name">Oder neuen Artikel / Rohstoff eingeben</label>
+                        <input type="text" id="stock-add-custom-name" maxlength="100" placeholder="z. B. Holz, Eisenbarren" oninput="document.getElementById('stock-add-name').value = ''" />
                     </div>
                     <div class="form-group" style="max-width: 200px;">
                         <label for="stock-add-qty">Anfangsbestand</label>
