@@ -1,15 +1,37 @@
+    function getOrderSelectableProducts() {
+        const productsByName = new Map();
+        (recipesList || []).forEach(recipe => {
+            if (!recipe || !recipe.outputName) return;
+            const name = recipe.outputName.trim();
+            productsByName.set(name.toLocaleLowerCase('de'), name);
+        });
+        (inventoryList || []).forEach(item => {
+            if (!item || !item.name) return;
+            const name = item.name.trim();
+            const key = name.toLocaleLowerCase('de');
+            if (!productsByName.has(key)) productsByName.set(key, name);
+        });
+        return [...productsByName.values()].sort((a, b) => a.localeCompare(b, 'de'));
+    }
+
     function updateOrderRecipeSelects() {
         const selects = document.querySelectorAll('.ord-name-select');
-        const sortedRecipes = [...recipesList].sort((a, b) => a.outputName.localeCompare(b.outputName, 'de'));
+        const products = getOrderSelectableProducts();
 
         selects.forEach(select => {
             const currentValue = select.value;
-            select.innerHTML = '<option value="" disabled selected>-- Artikel wählen --</option>';
-            sortedRecipes.forEach(rec => {
+            select.innerHTML = '';
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = '-- Artikel wählen --';
+            placeholder.disabled = true;
+            placeholder.selected = !products.includes(currentValue);
+            select.appendChild(placeholder);
+            products.forEach(name => {
                 const opt = document.createElement('option');
-                opt.value = rec.outputName;
-                opt.innerText = rec.outputName;
-                if (rec.outputName === currentValue) opt.selected = true;
+                opt.value = name;
+                opt.textContent = name;
+                if (name === currentValue) opt.selected = true;
                 select.appendChild(opt);
             });
         });
@@ -26,11 +48,12 @@
         const div = document.createElement('div');
         div.className = 'order-item-row';
         
-        const sortedRecipes = [...recipesList].sort((a, b) => a.outputName.localeCompare(b.outputName, 'de'));
+        const products = getOrderSelectableProducts();
         let optionsHtml = '<option value="" disabled selected>-- Artikel wählen --</option>';
-        sortedRecipes.forEach(rec => {
-            const isSelected = rec.outputName === defaultName ? 'selected' : '';
-            optionsHtml += `<option value="${rec.outputName}" ${isSelected}>${rec.outputName}</option>`;
+        products.forEach(name => {
+            const escapedName = escapeHtml(name);
+            const isSelected = name === defaultName ? 'selected' : '';
+            optionsHtml += `<option value="${escapedName}" ${isSelected}>${escapedName}</option>`;
         });
 
         div.innerHTML = `
@@ -68,7 +91,7 @@
                     const priceInfo = getPriceDetailsForCustomer(customerName, itemName);
                     subtotal += priceInfo.price * qty;
 
-                    const unitCost = getRecipeCostPerUnit(itemName);
+                    const unitCost = getOrderItemUnitCost(itemName);
                     totalProductionCost += unitCost * qty;
                 }
             }
@@ -80,6 +103,15 @@
         subtotalEl.innerText = `$${subtotal.toFixed(2)}`;
         totalEl.innerText = `$${finalTotal.toFixed(2)}`;
         productionCostEl.innerText = `$${totalProductionCost.toFixed(2)}`;
+    }
+
+    function getOrderItemUnitCost(itemName) {
+        const recipe = (recipesList || []).find(item =>
+            item.outputName && item.outputName.toLocaleLowerCase('de') === String(itemName).toLocaleLowerCase('de')
+        );
+        return recipe
+            ? Number(getRecipeCostPerUnit(itemName)) || 0
+            : Number(getLowestPurchaseCost(itemName)) || 0;
     }
 
     async function handleAddOrder(event) {
@@ -188,7 +220,7 @@
             const itemTotal = priceInfo.price * item.qty;
             subtotalSum += itemTotal;
 
-            const unitCost = getRecipeCostPerUnit(item.name);
+            const unitCost = getOrderItemUnitCost(item.name);
             const itemProductionCost = unitCost * item.qty;
             totalProductionCostSum += itemProductionCost;
 
@@ -274,7 +306,7 @@
                 const itemTotal = priceInfo.price * ordItem.qty;
                 subtotalOrderSum += itemTotal;
 
-                const unitCost = getRecipeCostPerUnit(ordItem.name);
+                const unitCost = getOrderItemUnitCost(ordItem.name);
                 totalProductionCostSum += unitCost * ordItem.qty;
 
                 let badgeColor = priceInfo.type === 'Sonderpreis' ? 'var(--accent-blue)' : 'var(--accent-gray)';
@@ -300,7 +332,7 @@
                 itemsHtml += `<div style="margin-top: 6px; font-size: 0.85rem; color: var(--text-muted);">Zwischensumme: $${subtotalOrderSum.toFixed(2)} (abzgl. ${orderDiscount}% Rabatt)</div>`;
             }
             itemsHtml += `<div style="margin-top: 4px; border-top: 1px solid var(--border-color); padding-top: 6px; font-weight: 700; color: #f59e0b;">Der Kunde bezahlt die Gesamtsumme der Bestellung: $${finalOrderSum.toFixed(2)}</div>`;
-            itemsHtml += `<div style="margin-top: 4px; font-weight: 700; color: #ef4444;">Die Herstellungskosten werden in die Kasse eingezahlt: $${totalProductionCostSum.toFixed(2)}</div>`;
+            itemsHtml += `<div style="margin-top: 4px; font-weight: 700; color: #ef4444;">Herstellungs-/Einkaufskosten gesamt: $${totalProductionCostSum.toFixed(2)}</div>`;
 
             let rawMaterialsHtml = '';
             const rawKeys = Object.keys(rawMaterialMap);
