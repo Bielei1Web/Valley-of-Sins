@@ -308,7 +308,8 @@ if (typeof canSpecialAction === 'function' && !canSpecialAction('verkaufsrechner
             customerName: 'Warenkorb',
             createdAt: getCurrentTimeString(),
             items,
-            discount: totals.discountPercent
+            discount: totals.discountPercent,
+            paid: false
         };
         const { data, error } = await supabaseClient.from('orders').insert([payload]).select();
         if (error) throw error;

@@ -140,7 +140,7 @@
         const createdAt = getCurrentTimeString();
         const { data, error } = await supabaseClient
             .from('orders')
-            .insert([{ customerName, createdAt, items, discount }])
+            .insert([{ customerName, createdAt, items, discount, paid: false }])
             .select();
 
         if (!error && data) {
@@ -180,6 +180,44 @@
             if (typeof broadcastDataChange === 'function') await broadcastDataChange('orders');
             logActivity('Bestellung', `Produktionsstatus einer Bestellung geändert: ${checkboxEl.checked ? 'produziert' : 'nicht produziert'}`, `Kunde: ${order.customerName}\nArtikel: ${order.items[itemIndex].name}\nStatus: ${checkboxEl.checked ? 'produziert' : 'nicht produziert'}`);
         }
+    }
+
+    async function toggleOrderPaymentStatus(orderId) {
+        if (!canEditTab('bestellungen')) {
+            showToast('Du hast für diesen Tab keine Bearbeitungsrechte.', 'danger', 'Änderung nicht erlaubt');
+            return;
+        }
+        const order = ordersList.find(item => item.id === orderId);
+        if (!order) return;
+
+        const nextPaid = !order.paid;
+        const updatedAt = nextPaid ? getCurrentTimeString() : null;
+        const updatedBy = nextPaid && currentUser ? currentUser.username : null;
+        const button = document.querySelector(`[data-order-payment-id="${orderId}"]`);
+        if (button) button.disabled = true;
+
+        const { error } = await supabaseClient
+            .from('orders')
+            .update({ paid: nextPaid, paidAt: updatedAt, paidBy: updatedBy })
+            .eq('id', orderId);
+
+        if (error) {
+            if (button) button.disabled = false;
+            console.error('Zahlungsstatus konnte nicht gespeichert werden:', error);
+            alert('Zahlungsstatus konnte nicht gespeichert werden: ' + error.message);
+            return;
+        }
+
+        order.paid = nextPaid;
+        order.paidAt = updatedAt;
+        order.paidBy = updatedBy;
+        renderOrders();
+        if (typeof broadcastDataChange === 'function') await broadcastDataChange('orders');
+        logActivity(
+            'Bestellung',
+            `Zahlungsstatus für Bestellung von "${order.customerName}" geändert: ${nextPaid ? 'bezahlt' : 'offen'}`,
+            `Kunde: ${order.customerName}\nStatus: ${nextPaid ? 'Bezahlt' : 'Offen'}${nextPaid ? `\nVermerkt von: ${updatedBy}\nZeitpunkt: ${updatedAt}` : ''}`
+        );
     }
 
     async function deleteOrder(id) {
@@ -247,6 +285,9 @@
             createdAt: order.createdAt,
             deliveredAt: deliveredAt,
             soldBy: currentUser && currentUser.username ? currentUser.username : 'Unbekannt',
+            paid: !!order.paid,
+            paidAt: order.paidAt || null,
+            paidBy: order.paidBy || null,
             discount_percent: orderDiscount,
             discount: orderDiscount
         };
@@ -332,6 +373,17 @@
                 itemsHtml += `<div style="margin-top: 6px; font-size: 0.85rem; color: var(--text-muted);">Zwischensumme: $${subtotalOrderSum.toFixed(2)} (abzgl. ${orderDiscount}% Rabatt)</div>`;
             }
             itemsHtml += `<div style="margin-top: 4px; border-top: 1px solid var(--border-color); padding-top: 6px; font-weight: 700; color: #f59e0b;">Der Kunde bezahlt die Gesamtsumme der Bestellung: $${finalOrderSum.toFixed(2)}</div>`;
+            const paymentDetails = order.paid
+                ? `Bezahlt${order.paidAt ? ` am ${escapeHtml(order.paidAt)}` : ''}${order.paidBy ? ` von ${escapeHtml(order.paidBy)}` : ''}`
+                : 'Noch nicht bezahlt';
+            const paymentColor = order.paid ? 'var(--accent-green)' : 'var(--text-muted)';
+            itemsHtml += `
+                <div class="order-payment-status">
+                    <span style="color: ${paymentColor}; font-weight: 700;">${paymentDetails}</span>
+                    <button type="button" class="btn ${order.paid ? 'btn-secondary' : 'btn-success'} order-payment-toggle" data-order-payment-id="${order.id}" onclick="toggleOrderPaymentStatus(${order.id})">
+                        ${order.paid ? 'Zahlung zurücksetzen' : 'Als bezahlt markieren'}
+                    </button>
+                </div>`;
             itemsHtml += `<div style="margin-top: 4px; font-weight: 700; color: #ef4444;">Herstellungs-/Einkaufskosten gesamt: $${totalProductionCostSum.toFixed(2)}</div>`;
 
             let rawMaterialsHtml = '';
