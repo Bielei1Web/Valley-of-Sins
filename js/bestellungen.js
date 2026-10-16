@@ -373,17 +373,6 @@
                 itemsHtml += `<div style="margin-top: 6px; font-size: 0.85rem; color: var(--text-muted);">Zwischensumme: $${subtotalOrderSum.toFixed(2)} (abzgl. ${orderDiscount}% Rabatt)</div>`;
             }
             itemsHtml += `<div style="margin-top: 4px; border-top: 1px solid var(--border-color); padding-top: 6px; font-weight: 700; color: #f59e0b;">Der Kunde bezahlt die Gesamtsumme der Bestellung: $${finalOrderSum.toFixed(2)}</div>`;
-            const paymentDetails = order.paid
-                ? `Bezahlt${order.paidAt ? ` am ${escapeHtml(order.paidAt)}` : ''}${order.paidBy ? ` von ${escapeHtml(order.paidBy)}` : ''}`
-                : 'Noch nicht bezahlt';
-            const paymentColor = order.paid ? 'var(--accent-green)' : 'var(--text-muted)';
-            itemsHtml += `
-                <div class="order-payment-status">
-                    <span style="color: ${paymentColor}; font-weight: 700;">${paymentDetails}</span>
-                    <button type="button" class="btn ${order.paid ? 'btn-secondary' : 'btn-success'} order-payment-toggle" data-order-payment-id="${order.id}" onclick="toggleOrderPaymentStatus(${order.id})">
-                        ${order.paid ? 'Zahlung zurücksetzen' : 'Als bezahlt markieren'}
-                    </button>
-                </div>`;
             itemsHtml += `<div style="margin-top: 4px; font-weight: 700; color: #ef4444;">Herstellungs-/Einkaufskosten gesamt: $${totalProductionCostSum.toFixed(2)}</div>`;
 
             let rawMaterialsHtml = '';
@@ -411,7 +400,10 @@
                 <td class="time-text">${escapeHtml(order.createdAt || '-')}</td>
                 <td>${statusHtml}</td>
                 <td>
-                    <div style="display: flex; gap: 8px;">
+                    <div class="order-actions">
+                        <button type="button" class="btn order-payment-toggle ${order.paid ? 'is-paid' : 'is-unpaid'}" data-order-payment-id="${order.id}" onclick="toggleOrderPaymentStatus(${order.id})" title="${order.paid && order.paidAt ? `Bezahlt am ${escapeHtml(order.paidAt)}${order.paidBy ? ` von ${escapeHtml(order.paidBy)}` : ''}. Klicken zum Zurücksetzen.` : 'Klicken, sobald der Kunde bezahlt hat.'}">
+                            ${order.paid ? '✓ Bezahlt' : '○ Offen – als bezahlt markieren'}
+                        </button>
                         <button class="btn btn-success" onclick="fulfillOrder(${order.id})">Ausliefern</button>
                         <button class="btn btn-danger delete-action" data-permission-action="delete" onclick="deleteOrder(${order.id})">Löschen</button>
                     </div>

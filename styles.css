@@ -3182,8 +3182,12 @@
 .sales-cart-action-row{display:grid!important;grid-template-columns:1fr 1fr;gap:8px!important;margin-top:16px}
 .sales-cart-action-row button{width:100%;height:42px}
 .sales-cart-action-row button:disabled{opacity:.45;cursor:not-allowed}
-.order-payment-status { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:8px; }
-.order-payment-toggle { min-height:32px; padding:5px 10px; font-size:.78rem; }
+.order-actions { display:flex; flex-direction:column; align-items:stretch; gap:8px; min-width:170px; }
+.order-payment-toggle { min-height:36px; padding:6px 10px; font-size:.78rem; font-weight:700; white-space:normal; }
+.order-payment-toggle.is-unpaid { background:var(--danger-color); border-color:var(--danger-color); color:#fff; }
+.order-payment-toggle.is-unpaid:hover { background:var(--danger-hover); border-color:var(--danger-hover); }
+.order-payment-toggle.is-paid { background:var(--success-color); border-color:var(--success-color); color:#10200e; }
+.order-payment-toggle.is-paid:hover { background:var(--success-hover); border-color:var(--success-hover); }
 .sales-modal{display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;padding:20px}
 .sales-modal.open{display:flex}
 .sales-modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px)}
