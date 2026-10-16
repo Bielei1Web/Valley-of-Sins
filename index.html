@@ -179,6 +179,23 @@
         </div>
     </div>
 
+    <div id="tab-customization-modal-backdrop" class="permission-modal-backdrop" onclick="handleTabCustomizationBackdropClick(event)">
+        <section class="permission-modal tab-customization-modal" role="dialog" aria-modal="true" aria-labelledby="tab-customization-title">
+            <div class="permission-modal-header">
+                <div>
+                    <h2 id="tab-customization-title">Navigation anpassen</h2>
+                    <div class="permission-help">Blende selten genutzte Tabs nur in deiner Navigation aus. Diese Einstellung wird lokal in diesem Browser gespeichert und ändert keine Zugriffsrechte.</div>
+                </div>
+                <button type="button" class="permission-modal-close" onclick="closeTabCustomization()" aria-label="Schließen">×</button>
+            </div>
+            <div id="tab-customization-list" class="tab-customization-list"></div>
+            <div class="permission-modal-actions">
+                <button type="button" class="btn" style="background-color:var(--card-bg-raised);color:var(--text-color);border:1px solid var(--border-color);" onclick="resetTabCustomization()">Alle Tabs einblenden</button>
+                <button type="button" class="btn btn-success" onclick="closeTabCustomization()">Fertig</button>
+            </div>
+        </section>
+    </div>
+
     <div id="user-activity-modal-backdrop" class="confirm-modal-backdrop" onclick="handleUserActivityBackdropClick(event)">
         <div class="confirm-modal user-activity-modal" role="dialog" aria-modal="true" aria-labelledby="user-activity-title">
             <div class="user-activity-header">
@@ -424,6 +441,7 @@
                     <div class="sidebar-user-bio" id="sidebar-user-bio"></div>
                 </div>
             </div>
+            <button type="button" class="btn btn-secondary sidebar-tab-settings-button" onclick="openTabCustomization()">Tabs anpassen</button>
             <div class="sidebar-profile-actions">
                 <button type="button" class="btn btn-secondary" onclick="toggleThemeQuick()" title="Darstellung wechseln">🌙 / ☀️ Design</button>
                 <button class="btn" onclick="logoutUser()">Abmelden</button>
@@ -1433,11 +1451,11 @@
 </div>
 
 <script src="js/config.js?v=20260826-3"></script>
-<script src="js/auth.js?v=20261014-berufe-1"></script>
+<script src="js/auth.js?v=20261016-local-tabs-1"></script>
 <script src="js/presence.js?v=20261014-berufe-1"></script>
 <script src="js/ui-helpers.js"></script>
 <script src="js/log.js"></script>
-<script src="js/tabs-dashboard.js?v=20261014-berufe-1"></script>
+<script src="js/tabs-dashboard.js?v=20261016-local-tabs-1"></script>
 <script src="js/herstellungskosten.js"></script>
 <script src="js/lagerbestand.js"></script>
 <script src="js/bestellungen.js"></script>

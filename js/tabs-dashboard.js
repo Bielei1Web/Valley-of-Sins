@@ -67,6 +67,134 @@
         }
     }
 
+    const PERSONAL_TAB_PREFERENCES_KEY = 'valleyOfSins_hiddenTabs_v1';
+
+    function getPersonalTabPreferencesKey() {
+        const username = currentUser && currentUser.username;
+        return username
+            ? `${PERSONAL_TAB_PREFERENCES_KEY}_${encodeURIComponent(username.toLocaleLowerCase('de'))}`
+            : null;
+    }
+
+    function getPersonalHiddenTabs() {
+        const key = getPersonalTabPreferencesKey();
+        if (!key) return [];
+        try {
+            const stored = localStorage.getItem(key);
+            if (!stored) return [];
+            const parsed = JSON.parse(stored);
+            if (!Array.isArray(parsed) || parsed.some(tab => typeof tab !== 'string')) {
+                throw new Error('Ungültiges Format der gespeicherten Tab-Auswahl.');
+            }
+            return parsed.filter(tab => tab !== 'uebersicht');
+        } catch (error) {
+            console.error('Die lokale Tab-Auswahl konnte nicht gelesen werden:', error);
+            showToast('Die lokal gespeicherte Tab-Auswahl konnte nicht gelesen werden.', 'warning');
+            return [];
+        }
+    }
+
+    function applyPersonalTabVisibility() {
+        const hiddenTabs = new Set(getPersonalHiddenTabs());
+        document.querySelectorAll('.tab-btn[data-tab]').forEach(button => {
+            const tabName = button.dataset.tab;
+            const allowed = canViewTab(tabName);
+            button.style.display = allowed && !hiddenTabs.has(tabName) ? '' : 'none';
+        });
+    }
+
+    function renderTabCustomizationOptions() {
+        const list = document.getElementById('tab-customization-list');
+        if (!list) return;
+        list.innerHTML = '';
+        const hiddenTabs = new Set(getPersonalHiddenTabs());
+        const availableButtons = [...document.querySelectorAll('#tabs-container > .tab-btn[data-tab]')]
+            .filter(button => canViewTab(button.dataset.tab));
+
+        availableButtons.forEach(button => {
+            const tabName = button.dataset.tab;
+            const label = button.querySelector('span')?.textContent.trim() || tabName;
+            const item = document.createElement('label');
+            item.className = 'tab-customization-item';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = !hiddenTabs.has(tabName);
+            checkbox.disabled = tabName === 'uebersicht';
+            checkbox.setAttribute('aria-label', `${label} in der Navigation anzeigen`);
+            checkbox.addEventListener('change', () => setPersonalTabVisibility(tabName, checkbox.checked));
+            const text = document.createElement('span');
+            text.textContent = label;
+            item.append(checkbox, text);
+            list.appendChild(item);
+        });
+    }
+
+    function setPersonalTabVisibility(tabName, visible) {
+        if (tabName === 'uebersicht') return;
+        const key = getPersonalTabPreferencesKey();
+        if (!key) {
+            showToast('Die Tab-Auswahl konnte keinem angemeldeten Benutzer zugeordnet werden.', 'warning');
+            renderTabCustomizationOptions();
+            return;
+        }
+
+        const hiddenTabs = new Set(getPersonalHiddenTabs());
+        if (visible) hiddenTabs.delete(tabName);
+        else hiddenTabs.add(tabName);
+
+        try {
+            localStorage.setItem(key, JSON.stringify([...hiddenTabs]));
+        } catch (error) {
+            console.error('Die lokale Tab-Auswahl konnte nicht gespeichert werden:', error);
+            showToast('Die Tab-Auswahl konnte lokal nicht gespeichert werden.', 'danger');
+            renderTabCustomizationOptions();
+            return;
+        }
+
+        if (!visible) {
+            const activeTab = document.querySelector('.tab-content.active');
+            if (activeTab && activeTab.id === `tab-${tabName}`) switchTab('uebersicht');
+        }
+        applyPersonalTabVisibility();
+    }
+
+    function openTabCustomization() {
+        renderTabCustomizationOptions();
+        const modal = document.getElementById('tab-customization-modal-backdrop');
+        if (modal) modal.classList.add('open');
+    }
+
+    function closeTabCustomization() {
+        const modal = document.getElementById('tab-customization-modal-backdrop');
+        if (modal) modal.classList.remove('open');
+    }
+
+    function handleTabCustomizationBackdropClick(event) {
+        if (event.target.id === 'tab-customization-modal-backdrop') closeTabCustomization();
+    }
+
+    function resetTabCustomization() {
+        const key = getPersonalTabPreferencesKey();
+        if (!key) {
+            showToast('Die Tab-Auswahl konnte keinem angemeldeten Benutzer zugeordnet werden.', 'warning');
+            return;
+        }
+        try {
+            localStorage.removeItem(key);
+        } catch (error) {
+            console.error('Die lokale Tab-Auswahl konnte nicht zurückgesetzt werden:', error);
+            showToast('Die Tab-Auswahl konnte lokal nicht zurückgesetzt werden.', 'danger');
+            return;
+        }
+        applyPersonalTabVisibility();
+        renderTabCustomizationOptions();
+        showToast('Alle erlaubten Tabs werden wieder angezeigt.', 'success');
+    }
+
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') closeTabCustomization();
+    });
+
     const tabsContainer = document.getElementById('tabs-container');
     let draggedTab = null;
 

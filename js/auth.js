@@ -621,6 +621,7 @@
             const allowed = canViewTab(tab);
             btn.style.display = allowed ? '' : 'none';
         });
+        if (typeof applyPersonalTabVisibility === 'function') applyPersonalTabVisibility();
     }
 
     function lockElementIfNeeded(el) {
