@@ -2331,7 +2331,7 @@
             cursor: pointer;
         }
         .tab-customization-item input { width: 18px; height: 18px; accent-color: var(--primary-color); }
-        .sidebar-tab-settings-button { width: 100%; margin-top: 10px; }
+        .sidebar-tab-settings-button { width: 100%; margin: 10px 0 8px; }
 
         /* ============ EIGENES BESTÄTIGUNGS-MODAL (ersetzt Browser-confirm()) ============ */
         .confirm-modal-backdrop {
