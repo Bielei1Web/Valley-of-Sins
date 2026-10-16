@@ -1395,6 +1395,37 @@
     </aside>
 </div>
 
+        <button type="button" id="quick-calculator-toggle" class="quick-calculator-toggle" aria-expanded="false" aria-controls="quick-calculator-panel" onclick="toggleQuickCalculator()">Taschenrechner</button>
+        <section id="quick-calculator-panel" class="quick-calculator-panel" role="dialog" aria-modal="false" aria-labelledby="quick-calculator-title" hidden>
+            <header class="quick-calculator-header">
+                <h2 id="quick-calculator-title">Taschenrechner</h2>
+                <button type="button" class="quick-calculator-close" onclick="closeQuickCalculator()" aria-label="Taschenrechner schließen">×</button>
+            </header>
+            <output id="quick-calculator-display" class="quick-calculator-display" aria-live="polite">0</output>
+            <div class="quick-calculator-keypad" aria-label="Taschenrechner-Tasten">
+                <button type="button" class="quick-calculator-secondary" data-calculator-action="clear">C</button>
+                <button type="button" class="quick-calculator-secondary" data-calculator-action="backspace" aria-label="Letzte Stelle löschen">⌫</button>
+                <button type="button" data-calculator-value="(">(</button>
+                <button type="button" data-calculator-value=")">)</button>
+                <button type="button" class="quick-calculator-operator" data-calculator-value="/">÷</button>
+                <button type="button" data-calculator-value="7">7</button>
+                <button type="button" data-calculator-value="8">8</button>
+                <button type="button" data-calculator-value="9">9</button>
+                <button type="button" class="quick-calculator-operator" data-calculator-value="*">×</button>
+                <button type="button" data-calculator-value="4">4</button>
+                <button type="button" data-calculator-value="5">5</button>
+                <button type="button" data-calculator-value="6">6</button>
+                <button type="button" class="quick-calculator-operator" data-calculator-value="-">−</button>
+                <button type="button" data-calculator-value="1">1</button>
+                <button type="button" data-calculator-value="2">2</button>
+                <button type="button" data-calculator-value="3">3</button>
+                <button type="button" class="quick-calculator-operator" data-calculator-value="+">+</button>
+                <button type="button" data-calculator-value="0">0</button>
+                <button type="button" data-calculator-value=".">,</button>
+                <button type="button" class="quick-calculator-equals" data-calculator-action="calculate">=</button>
+            </div>
+            <div id="quick-calculator-error" class="quick-calculator-error" role="status" aria-live="polite"></div>
+        </section>
     </div><!-- /#app-content -->
 
 <div id="chat-modal-backdrop" class="chat-modal-backdrop" onclick="handleChatBackdropClick(event)">
@@ -1478,5 +1509,6 @@
 <script src="js/main.js"></script>
 <script src="js/erweiterte-funktionen.js"></script>
 <script src="js/chat.js"></script>
+<script src="js/taschenrechner.js?v=20261016-1"></script>
 </body>
 </html>
