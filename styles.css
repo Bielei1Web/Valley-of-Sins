@@ -1031,6 +1031,26 @@
             max-width: 300px;
         }
 
+        .filter-card #inventory-search {
+            flex: 1;
+            width: 350px;
+            min-width: 180px;
+            max-width: 350px;
+            min-height: 42px;
+            padding: 10px 14px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 7px;
+            font: inherit;
+        }
+
+        .filter-card #inventory-search:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px var(--primary-soft);
+            outline: none;
+        }
+
         .log-filter-card {
             display: flex;
             align-items: center;

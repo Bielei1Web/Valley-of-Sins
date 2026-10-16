@@ -1,7 +1,21 @@
     function renderStockTable() {
         const tbody = document.getElementById('inventory-body');
+        if (!tbody) return;
         tbody.innerHTML = '';
-        const sortedList = [...inventoryList].sort((a, b) => a.name.localeCompare(b.name, 'de', { sensitivity: 'base' }));
+        const searchInput = document.getElementById('inventory-search');
+        const searchTerm = searchInput ? searchInput.value.trim().toLocaleLowerCase('de') : '';
+        const sortedList = [...(inventoryList || [])]
+            .filter(item => item && item.name && item.name.toLocaleLowerCase('de').includes(searchTerm))
+            .sort((a, b) => a.name.localeCompare(b.name, 'de', { sensitivity: 'base' }));
+
+        if (sortedList.length === 0) {
+            const message = searchTerm
+                ? `Keine Lagerartikel für „${escapeHtml(searchInput.value.trim())}“ gefunden.`
+                : 'Keine Lagerartikel vorhanden.';
+            tbody.innerHTML = `<tr><td colspan="5" class="empty-state-cell">${message}</td></tr>`;
+            updateLagerBadge();
+            return;
+        }
 
         sortedList.forEach((item) => {
             const stockColor = item.quantity === 0 ? 'color: var(--danger-color) !important;' : '';
