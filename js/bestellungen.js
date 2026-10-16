@@ -397,7 +397,7 @@
                 <td><div class="material-name" style="color: var(--accent-blue); font-size: 1.05rem;">${escapeHtml(order.customerName)}</div></td>
                 <td><div style="font-size: 0.9rem; line-height: 1.4;">${itemsHtml}</div></td>
                 <td><div style="font-size: 0.9rem; line-height: 1.4;">${rawMaterialsHtml}</div></td>
-                <td class="time-text">${escapeHtml(order.createdAt || '-')}</td>
+                <td class="time-text order-created-at">${splitDateTimeDisplay(escapeHtml(order.createdAt || '-'))}</td>
                 <td>${statusHtml}</td>
                 <td>
                     <div class="order-actions">

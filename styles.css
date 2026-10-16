@@ -1623,6 +1623,17 @@
             font-family: var(--font-mono);
         }
 
+        .order-created-at {
+            width: 160px;
+            min-width: 160px;
+            line-height: 1.5;
+        }
+
+        .order-created-at span {
+            display: block;
+            white-space: nowrap;
+        }
+
         details {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
