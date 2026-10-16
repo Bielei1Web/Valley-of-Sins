@@ -39,8 +39,53 @@
 
     function appendCalculatorValue(value) {
         if (resultShown && /[\d.(]/.test(value)) expression = '';
+        const currentNumber = expression.match(/(?:^|[+\-*/(])(-?\d*\.?\d*)$/);
+        if (value === '.' && currentNumber && currentNumber[1].includes('.')) return;
         resultShown = false;
         expression += value === ',' ? '.' : value;
+        setError();
+        renderDisplay();
+    }
+
+    function updateLastNumber(transform) {
+        const match = expression.match(/\d*\.?\d+$/);
+        if (!match) return false;
+        const value = Number(match[0]);
+        if (!Number.isFinite(value)) return false;
+        expression = expression.slice(0, match.index) + transform(value);
+        return true;
+    }
+
+    function applyCalculatorPercent() {
+        if (!updateLastNumber(value => String(value / 100))) {
+            setError('Gib zuerst eine Zahl ein.');
+            return;
+        }
+        resultShown = false;
+        setError();
+        renderDisplay();
+    }
+
+    function toggleCalculatorSign() {
+        if (resultShown) resultShown = false;
+        const match = expression.match(/\d*\.?\d+$/);
+        if (!match) {
+            if (!expression) expression = '-';
+            else if (expression.endsWith('--')) expression = expression.slice(0, -1);
+            else if (/[+\-*/(]$/.test(expression)) expression += '-';
+            setError();
+            renderDisplay();
+            return;
+        }
+
+        const numberStart = match.index;
+        const signIndex = numberStart - 1;
+        const previousOperatorIndex = signIndex - 1;
+        const hasUnaryMinus = expression[signIndex] === '-' &&
+            (signIndex === 0 || /[+\-*/(]/.test(expression[previousOperatorIndex]));
+        expression = hasUnaryMinus
+            ? expression.slice(0, signIndex) + expression.slice(numberStart)
+            : expression.slice(0, numberStart) + '-' + expression.slice(numberStart);
         setError();
         renderDisplay();
     }
@@ -129,6 +174,8 @@
         if (button.dataset.calculatorAction === 'clear') clearCalculator();
         else if (button.dataset.calculatorAction === 'backspace') backspaceCalculator();
         else if (button.dataset.calculatorAction === 'calculate') calculate();
+        else if (button.dataset.calculatorAction === 'percent') applyCalculatorPercent();
+        else if (button.dataset.calculatorAction === 'sign') toggleCalculatorSign();
         else if (button.dataset.calculatorValue) appendCalculatorValue(button.dataset.calculatorValue);
     });
 
@@ -141,9 +188,13 @@
         if (panel.hidden || event.altKey || event.ctrlKey || event.metaKey) return;
         const target = event.target;
         if (target && (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable)) return;
-        if (/^[\d()+\-*/.,]$/.test(event.key)) {
+        if (/^[\d+\-*/.,%]$/.test(event.key)) {
             event.preventDefault();
-            appendCalculatorValue(event.key);
+            if (event.key === '%') applyCalculatorPercent();
+            else appendCalculatorValue(event.key);
+        } else if (event.key === 'F9') {
+            event.preventDefault();
+            toggleCalculatorSign();
         } else if (event.key === 'Enter' || event.key === '=') {
             event.preventDefault();
             calculate();

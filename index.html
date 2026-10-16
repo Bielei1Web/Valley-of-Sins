@@ -1403,10 +1403,9 @@
             </header>
             <output id="quick-calculator-display" class="quick-calculator-display" aria-live="polite">0</output>
             <div class="quick-calculator-keypad" aria-label="Taschenrechner-Tasten">
+                <button type="button" class="quick-calculator-secondary" data-calculator-action="percent">%</button>
                 <button type="button" class="quick-calculator-secondary" data-calculator-action="clear">C</button>
                 <button type="button" class="quick-calculator-secondary" data-calculator-action="backspace" aria-label="Letzte Stelle löschen">⌫</button>
-                <button type="button" data-calculator-value="(">(</button>
-                <button type="button" data-calculator-value=")">)</button>
                 <button type="button" class="quick-calculator-operator" data-calculator-value="/">÷</button>
                 <button type="button" data-calculator-value="7">7</button>
                 <button type="button" data-calculator-value="8">8</button>
@@ -1420,6 +1419,7 @@
                 <button type="button" data-calculator-value="2">2</button>
                 <button type="button" data-calculator-value="3">3</button>
                 <button type="button" class="quick-calculator-operator" data-calculator-value="+">+</button>
+                <button type="button" class="quick-calculator-secondary" data-calculator-action="sign" aria-label="Vorzeichen wechseln">+/−</button>
                 <button type="button" data-calculator-value="0">0</button>
                 <button type="button" data-calculator-value=".">,</button>
                 <button type="button" class="quick-calculator-equals" data-calculator-action="calculate">=</button>
@@ -1509,6 +1509,6 @@
 <script src="js/main.js"></script>
 <script src="js/erweiterte-funktionen.js"></script>
 <script src="js/chat.js"></script>
-<script src="js/taschenrechner.js?v=20261016-1"></script>
+<script src="js/taschenrechner.js?v=20261017-1"></script>
 </body>
 </html>
