@@ -18,7 +18,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=20261017-payment-3">
 </head>
 <body>
 
@@ -220,6 +220,21 @@
                 <button type="button" class="btn btn-danger" id="confirm-modal-confirm-btn" onclick="resolveConfirmModal(true)">Bestätigen</button>
             </div>
         </div>
+    </div>
+
+    <div id="order-payment-modal-backdrop" class="confirm-modal-backdrop order-payment-modal-backdrop" onclick="handleOrderPaymentModalBackdropClick(event)">
+        <section class="confirm-modal order-payment-modal" role="dialog" aria-modal="true" aria-labelledby="order-payment-modal-title">
+            <button type="button" class="permission-modal-close order-payment-modal-close" onclick="closeOrderPaymentMethodModal()" aria-label="Schließen">×</button>
+            <h2 id="order-payment-modal-title" style="margin:0 36px 8px 0;">Zahlungsart auswählen</h2>
+            <p class="permission-help">Wie hat der Kunde bezahlt?</p>
+            <div class="order-payment-modal-actions">
+                <div class="order-payment-method-buttons">
+                    <button type="button" class="btn btn-success order-payment-method-option" onclick="saveSelectedOrderPaymentStatus('Bar')">Bar</button>
+                    <button type="button" class="btn btn-success order-payment-method-option" onclick="saveSelectedOrderPaymentStatus('Rechnung')">Rechnung</button>
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="closeOrderPaymentMethodModal()">Abbrechen</button>
+            </div>
+        </section>
     </div>
 
     <div id="log-detail-backdrop" class="confirm-modal-backdrop log-detail-backdrop" onclick="handleLogDetailBackdropClick(event)">
@@ -1494,7 +1509,7 @@
 <script src="js/tabs-dashboard.js?v=20261016-local-tabs-1"></script>
 <script src="js/herstellungskosten.js"></script>
 <script src="js/lagerbestand.js"></script>
-<script src="js/bestellungen.js?v=20261017-payment-1"></script>
+<script src="js/bestellungen.js?v=20261017-payment-3"></script>
 <script src="js/kunden.js"></script>
 <script src="js/verkaufspreise.js"></script>
 <script src="js/verkaufsrechner.js?v=20261017-payment-1"></script>

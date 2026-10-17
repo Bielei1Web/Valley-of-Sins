@@ -182,7 +182,7 @@
         }
     }
 
-    async function toggleOrderPaymentStatus(orderId) {
+    function toggleOrderPaymentStatus(orderId) {
         if (!canEditTab('bestellungen')) {
             showToast('Du hast für diesen Tab keine Bearbeitungsrechte.', 'danger', 'Änderung nicht erlaubt');
             return;
@@ -190,34 +190,85 @@
         const order = ordersList.find(item => item.id === orderId);
         if (!order) return;
 
-        const nextPaid = !order.paid;
-        const updatedAt = nextPaid ? getCurrentTimeString() : null;
-        const updatedBy = nextPaid && currentUser ? currentUser.username : null;
-        const button = document.querySelector(`[data-order-payment-id="${orderId}"]`);
+        if (!order.paid) {
+            openOrderPaymentMethodModal(orderId);
+            return;
+        }
+
+        return saveOrderPaymentStatus(order, false, null);
+    }
+
+    function openOrderPaymentMethodModal(orderId) {
+        const modal = document.getElementById('order-payment-modal-backdrop');
+        const methodButtons = modal ? modal.querySelectorAll('.order-payment-method-option') : [];
+        if (!modal || methodButtons.length !== 2) {
+            showToast('Die Auswahl der Zahlungsart ist momentan nicht verfügbar.', 'danger', 'Fehler');
+            return;
+        }
+        modal.dataset.orderId = String(orderId);
+        methodButtons.forEach(button => { button.disabled = false; });
+        modal.classList.add('open');
+        methodButtons[0].focus();
+    }
+
+    function closeOrderPaymentMethodModal() {
+        const modal = document.getElementById('order-payment-modal-backdrop');
+        if (modal) {
+            modal.classList.remove('open');
+            delete modal.dataset.orderId;
+        }
+    }
+
+    function handleOrderPaymentModalBackdropClick(event) {
+        if (event.target.id === 'order-payment-modal-backdrop') closeOrderPaymentMethodModal();
+    }
+
+    async function saveSelectedOrderPaymentStatus(method) {
+        const modal = document.getElementById('order-payment-modal-backdrop');
+        const methodButtons = modal ? modal.querySelectorAll('.order-payment-method-option') : [];
+        const orderId = modal ? Number(modal.dataset.orderId) : NaN;
+        const order = ordersList.find(item => item.id === orderId);
+        if (!order || !['Bar', 'Rechnung'].includes(method)) {
+            showToast('Bitte wähle Bar oder Rechnung aus.', 'warning', 'Zahlungsart fehlt');
+            return;
+        }
+        methodButtons.forEach(button => { button.disabled = true; });
+        const saved = await saveOrderPaymentStatus(order, true, method);
+        if (saved) closeOrderPaymentMethodModal();
+        else methodButtons.forEach(button => { button.disabled = false; });
+    }
+
+    async function saveOrderPaymentStatus(order, isPaid, method) {
+        const updatedAt = isPaid ? getCurrentTimeString() : null;
+        const updatedBy = isPaid && currentUser ? currentUser.username : null;
+        const paymentMethod = isPaid ? method : null;
+        const button = document.querySelector(`[data-order-payment-id="${order.id}"]`);
         if (button) button.disabled = true;
 
         const { error } = await supabaseClient
             .from('orders')
-            .update({ paid: nextPaid, paidAt: updatedAt, paidBy: updatedBy })
-            .eq('id', orderId);
+            .update({ paid: isPaid, paidAt: updatedAt, paidBy: updatedBy, paidMethod: paymentMethod })
+            .eq('id', order.id);
 
         if (error) {
             if (button) button.disabled = false;
             console.error('Zahlungsstatus konnte nicht gespeichert werden:', error);
             alert('Zahlungsstatus konnte nicht gespeichert werden: ' + error.message);
-            return;
+            return false;
         }
 
-        order.paid = nextPaid;
+        order.paid = isPaid;
         order.paidAt = updatedAt;
         order.paidBy = updatedBy;
+        order.paidMethod = paymentMethod;
         renderOrders();
         if (typeof broadcastDataChange === 'function') await broadcastDataChange('orders');
         logActivity(
             'Bestellung',
-            `Zahlungsstatus für Bestellung von "${order.customerName}" geändert: ${nextPaid ? 'bezahlt' : 'offen'}`,
-            `Kunde: ${order.customerName}\nStatus: ${nextPaid ? 'Bezahlt' : 'Offen'}${nextPaid ? `\nVermerkt von: ${updatedBy}\nZeitpunkt: ${updatedAt}` : ''}`
+            `Zahlungsstatus für Bestellung von "${order.customerName}" geändert: ${isPaid ? `bezahlt – ${method}` : 'offen'}`,
+            `Kunde: ${order.customerName}\nStatus: ${isPaid ? `Bezahlt – ${method}` : 'Offen'}${isPaid ? `\nVermerkt von: ${updatedBy}\nZeitpunkt: ${updatedAt}` : ''}`
         );
+        return true;
     }
 
     async function deleteOrder(id) {
@@ -288,6 +339,7 @@
             paid: !!order.paid,
             paidAt: order.paidAt || null,
             paidBy: order.paidBy || null,
+            paidMethod: order.paidMethod || null,
             discount_percent: orderDiscount,
             discount: orderDiscount
         };
@@ -402,7 +454,7 @@
                 <td>
                     <div class="order-actions">
                         <button type="button" class="btn order-payment-toggle ${order.paid ? 'is-paid' : 'is-unpaid'}" data-order-payment-id="${order.id}" onclick="toggleOrderPaymentStatus(${order.id})" title="${order.paid && order.paidAt ? `Bezahlt am ${escapeHtml(order.paidAt)}${order.paidBy ? ` von ${escapeHtml(order.paidBy)}` : ''}. Klicken zum Zurücksetzen.` : 'Klicken, sobald der Kunde bezahlt hat.'}">
-                            ${order.paid ? '✓ Bezahlt' : '○ Offen – als bezahlt markieren'}
+                            ${order.paid ? `✓ Bezahlt${order.paidMethod ? ` – ${escapeHtml(order.paidMethod === 'Rechnung' ? 'per Rechnung' : order.paidMethod)}` : ''}` : '○ Offen – als bezahlt markieren'}
                         </button>
                         <button class="btn btn-success" onclick="fulfillOrder(${order.id})">Ausliefern</button>
                         <button class="btn btn-danger delete-action" data-permission-action="delete" onclick="deleteOrder(${order.id})">Löschen</button>

@@ -3199,6 +3199,12 @@
 .order-payment-toggle.is-unpaid:hover { background:var(--danger-hover); border-color:var(--danger-hover); }
 .order-payment-toggle.is-paid { background:var(--success-color); border-color:var(--success-color); color:#10200e; }
 .order-payment-toggle.is-paid:hover { background:var(--success-hover); border-color:var(--success-hover); }
+.order-payment-modal-backdrop { z-index:4100; }
+.order-payment-modal { position:relative; width:min(440px,100%); }
+.order-payment-modal-close { position:absolute; top:14px; right:14px; }
+.order-payment-modal-actions { display:grid; gap:10px; margin-top:20px; }
+.order-payment-method-buttons { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.order-payment-method-buttons .btn { width:100%; }
 .sales-modal{display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;padding:20px}
 .sales-modal.open{display:flex}
 .sales-modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px)}
