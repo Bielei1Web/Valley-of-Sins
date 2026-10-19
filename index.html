@@ -18,7 +18,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20261017-payment-3">
+    <link rel="stylesheet" href="styles.css?v=20261019-partial-delivery-2">
 </head>
 <body>
 
@@ -233,6 +233,19 @@
                     <button type="button" class="btn btn-success order-payment-method-option" onclick="saveSelectedOrderPaymentStatus('Rechnung')">Rechnung</button>
                 </div>
                 <button type="button" class="btn btn-secondary" onclick="closeOrderPaymentMethodModal()">Abbrechen</button>
+            </div>
+        </section>
+    </div>
+
+    <div id="order-partial-delivery-modal-backdrop" class="confirm-modal-backdrop order-partial-delivery-modal-backdrop" onclick="handleOrderPartialDeliveryModalBackdropClick(event)">
+        <section class="confirm-modal order-partial-delivery-modal" role="dialog" aria-modal="true" aria-labelledby="order-partial-delivery-modal-title">
+            <button type="button" class="permission-modal-close order-partial-delivery-modal-close" onclick="closeOrderPartialDeliveryModal()" aria-label="Schließen">×</button>
+            <h2 id="order-partial-delivery-modal-title" style="margin:0 36px 8px 0;">Teil ausliefern</h2>
+            <p id="order-partial-delivery-modal-description" class="permission-help"></p>
+            <div id="order-partial-delivery-items" class="order-partial-delivery-items"></div>
+            <div class="confirm-modal-actions order-partial-delivery-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeOrderPartialDeliveryModal()">Abbrechen</button>
+                <button type="button" class="btn btn-success" id="order-partial-delivery-save-btn" onclick="saveOrderPartialDelivery()">Teilauslieferung speichern</button>
             </div>
         </section>
     </div>
@@ -1513,7 +1526,7 @@
 <script src="js/tabs-dashboard.js?v=20261016-local-tabs-1"></script>
 <script src="js/herstellungskosten.js"></script>
 <script src="js/lagerbestand.js"></script>
-<script src="js/bestellungen.js?v=20261017-payment-3"></script>
+<script src="js/bestellungen.js?v=20261019-partial-delivery-2"></script>
 <script src="js/kunden.js"></script>
 <script src="js/verkaufspreise.js"></script>
 <script src="js/verkaufsrechner.js?v=20261019-sales-search-1"></script>

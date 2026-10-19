@@ -3197,7 +3197,8 @@
 .sales-cart-action-row button{width:100%;height:42px}
 .sales-cart-action-row button:disabled{opacity:.45;cursor:not-allowed}
 .order-actions { display:flex; flex-direction:column; align-items:stretch; gap:8px; min-width:170px; }
-.order-payment-toggle { min-height:36px; padding:6px 10px; font-size:.78rem; font-weight:700; white-space:normal; }
+.order-actions > .btn { height:auto; min-height:0; padding:6px 12px; font-size:.8rem; }
+.order-payment-toggle { font-weight:700; white-space:normal; }
 .order-payment-toggle.is-unpaid { background:var(--danger-color); border-color:var(--danger-color); color:#fff; }
 .order-payment-toggle.is-unpaid:hover { background:var(--danger-hover); border-color:var(--danger-hover); }
 .order-payment-toggle.is-paid { background:var(--success-color); border-color:var(--success-color); color:#10200e; }
@@ -3208,6 +3209,18 @@
 .order-payment-modal-actions { display:grid; gap:10px; margin-top:20px; }
 .order-payment-method-buttons { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .order-payment-method-buttons .btn { width:100%; }
+.order-partial-delivery-modal-backdrop { z-index:4100; }
+.order-partial-delivery-modal { width:min(560px,100%); max-height:calc(100vh - 40px); overflow-y:auto; }
+.order-partial-delivery-modal-close { position:absolute; top:14px; right:14px; }
+.order-partial-delivery-items { display:grid; gap:8px; max-height:min(48vh,420px); overflow-y:auto; margin-top:16px; }
+.order-partial-delivery-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:10px 12px; border:1px solid var(--border-color); border-radius:8px; background:var(--tab-inactive-bg); }
+.order-partial-delivery-item { display:grid; gap:4px; min-width:0; }
+.order-partial-delivery-item strong { overflow-wrap:anywhere; }
+.order-partial-delivery-item small,.order-partial-delivery-quantity>span { color:var(--text-muted); font-size:.82rem; }
+.order-partial-delivery-quantity { display:grid; gap:4px; flex:0 0 110px; }
+.order-partial-delivery-quantity input { width:100%; min-height:38px; padding:6px 8px; border:1px solid var(--border-color); border-radius:6px; background:var(--input-bg); color:var(--text-color); font:inherit; }
+.order-partial-delivery-actions { margin-top:18px; }
+.order-partial-delivery-toggle { border-color:var(--border-color); }
 .sales-modal{display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;padding:20px}
 .sales-modal.open{display:flex}
 .sales-modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px)}

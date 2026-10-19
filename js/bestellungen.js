@@ -289,7 +289,152 @@
         }
     }
 
-    
+    function getOrderDeliveredQuantity(item) {
+        const deliveredQty = Number(item && item.deliveredQty);
+        return Number.isFinite(deliveredQty) && deliveredQty > 0 ? deliveredQty : 0;
+    }
+
+    function getOrderOriginalQuantity(item) {
+        const orderedQty = Number(item && item.orderedQty);
+        if (Number.isFinite(orderedQty) && orderedQty > 0) return orderedQty;
+        return (Number(item && item.qty) || 0) + getOrderDeliveredQuantity(item);
+    }
+
+    function openOrderPartialDeliveryModal(orderId) {
+        if (typeof canSpecialAction === 'function' && !canSpecialAction('bestellungen_ausliefern')) {
+            showToast('Du hast kein Sonderrecht zum Ausliefern von Bestellungen.', 'danger', 'Ausliefern nicht erlaubt');
+            return;
+        }
+        const order = ordersList.find(item => item.id === orderId);
+        const modal = document.getElementById('order-partial-delivery-modal-backdrop');
+        const itemsContainer = document.getElementById('order-partial-delivery-items');
+        const description = document.getElementById('order-partial-delivery-modal-description');
+        const saveButton = document.getElementById('order-partial-delivery-save-btn');
+        if (!order || !modal || !itemsContainer || !description || !saveButton) {
+            showToast('Die Teilauslieferung ist momentan nicht verfügbar.', 'danger', 'Fehler');
+            return;
+        }
+
+        const openItems = order.items
+            .map((item, index) => ({ item, index, openQty: Number(item.qty) || 0 }))
+            .filter(entry => entry.openQty > 0);
+        if (!openItems.length) {
+            showToast('Für diese Bestellung sind keine offenen Mengen vorhanden. Nutze „Ausliefern“, um sie abzuschließen.', 'warning', 'Keine offenen Mengen');
+            return;
+        }
+
+        modal.dataset.orderId = String(orderId);
+        description.textContent = `Kunde: ${order.customerName}. Trage ein, wie viel du diesmal je Artikel übergibst. Die offene Restmenge bleibt in der Bestellung.`;
+        itemsContainer.innerHTML = openItems.map(({ item, index, openQty }) => `
+            <label class="order-partial-delivery-row">
+                <span class="order-partial-delivery-item">
+                    <strong>${escapeHtml(item.name)}</strong>
+                    <small>Noch offen: ${openQty}</small>
+                </span>
+                <span class="order-partial-delivery-quantity">
+                    <span>Diesmal</span>
+                    <input type="number" min="0" max="${openQty}" step="1" value="0" data-order-delivery-index="${index}" aria-label="${escapeHtml(item.name)}: diesmal ausgelieferte Menge">
+                </span>
+            </label>`).join('');
+        saveButton.disabled = false;
+        modal.classList.add('open');
+        const firstInput = itemsContainer.querySelector('input');
+        if (firstInput) firstInput.focus();
+    }
+
+    function closeOrderPartialDeliveryModal() {
+        const modal = document.getElementById('order-partial-delivery-modal-backdrop');
+        if (modal) {
+            modal.classList.remove('open');
+            delete modal.dataset.orderId;
+        }
+    }
+
+    function handleOrderPartialDeliveryModalBackdropClick(event) {
+        if (event.target.id === 'order-partial-delivery-modal-backdrop') closeOrderPartialDeliveryModal();
+    }
+
+    async function saveOrderPartialDelivery() {
+        if (typeof canSpecialAction === 'function' && !canSpecialAction('bestellungen_ausliefern')) {
+            showToast('Du hast kein Sonderrecht zum Ausliefern von Bestellungen.', 'danger', 'Ausliefern nicht erlaubt');
+            return;
+        }
+        const modal = document.getElementById('order-partial-delivery-modal-backdrop');
+        const saveButton = document.getElementById('order-partial-delivery-save-btn');
+        const orderId = modal ? Number(modal.dataset.orderId) : NaN;
+        const order = ordersList.find(item => item.id === orderId);
+        if (!order || !modal || !saveButton) return;
+
+        const deliveries = new Map();
+        let totalDeliveredNow = 0;
+        let totalOpen = 0;
+        for (const input of modal.querySelectorAll('[data-order-delivery-index]')) {
+            const itemIndex = Number(input.dataset.orderDeliveryIndex);
+            const item = order.items[itemIndex];
+            const openQty = item ? Number(item.qty) || 0 : -1;
+            const deliveredNow = Number(input.value);
+            if (!Number.isInteger(deliveredNow) || deliveredNow < 0 || deliveredNow > openQty) {
+                showToast('Bitte gib für jeden Artikel eine ganze Menge zwischen 0 und der offenen Menge ein.', 'warning', 'Menge ungültig');
+                input.focus();
+                return;
+            }
+            deliveries.set(itemIndex, deliveredNow);
+            totalDeliveredNow += deliveredNow;
+            totalOpen += openQty;
+        }
+
+        if (totalDeliveredNow === 0) {
+            showToast('Gib mindestens eine ausgelieferte Menge ein.', 'warning', 'Menge fehlt');
+            return;
+        }
+        if (totalDeliveredNow === totalOpen) {
+            showToast('Wenn die gesamte offene Bestellung übergeben wurde, nutze bitte „Ausliefern“, um sie wie gewohnt abzuschließen.', 'warning', 'Bestellung vollständig');
+            return;
+        }
+
+        const updatedItems = order.items.map((item, index) => {
+            const deliveredNow = deliveries.get(index) || 0;
+            const currentOpen = Number(item.qty) || 0;
+            const previouslyDelivered = getOrderDeliveredQuantity(item);
+            return {
+                ...item,
+                qty: currentOpen - deliveredNow,
+                orderedQty: getOrderOriginalQuantity(item),
+                deliveredQty: previouslyDelivered + deliveredNow
+            };
+        });
+
+        saveButton.disabled = true;
+        const { error } = await supabaseClient
+            .from('orders')
+            .update({ items: updatedItems })
+            .eq('id', orderId);
+
+        if (error) {
+            saveButton.disabled = false;
+            console.error('Teilauslieferung konnte nicht gespeichert werden:', error);
+            alert('Teilauslieferung konnte nicht gespeichert werden: ' + error.message);
+            return;
+        }
+
+        order.items = updatedItems;
+        closeOrderPartialDeliveryModal();
+        renderOrders();
+        if (typeof broadcastDataChange === 'function') await broadcastDataChange('orders');
+        const deliveredSummary = updatedItems
+            .map((item, index) => {
+                const qty = deliveries.get(index) || 0;
+                return qty > 0 ? `${qty}x ${item.name}` : null;
+            })
+            .filter(Boolean)
+            .join(', ');
+        logActivity(
+            'Bestellung',
+            `Teilauslieferung für "${order.customerName}" gespeichert`,
+            `Kunde: ${order.customerName}\nDiesmal ausgeliefert: ${deliveredSummary}\nNoch offene Positionen: ${updatedItems.filter(item => Number(item.qty) > 0).length}`
+        );
+        showToast('Teilauslieferung gespeichert. Die Bestellung zeigt jetzt nur noch die offenen Mengen.', 'success', 'Teilauslieferung gespeichert');
+    }
 
     async function fulfillOrder(orderId) {
         if (typeof canSpecialAction === 'function' && !canSpecialAction('bestellungen_ausliefern')) {
@@ -305,17 +450,20 @@
         let totalProductionCostSum = 0;
 
         const archivedItems = order.items.map(item => {
+            const orderedQty = getOrderOriginalQuantity(item);
+            const deliveredQty = orderedQty;
             const priceInfo = getPriceDetailsForCustomer(order.customerName, item.name);
-            const itemTotal = priceInfo.price * item.qty;
+            const itemTotal = priceInfo.price * orderedQty;
             subtotalSum += itemTotal;
 
             const unitCost = getOrderItemUnitCost(item.name);
-            const itemProductionCost = unitCost * item.qty;
+            const itemProductionCost = unitCost * orderedQty;
             totalProductionCostSum += itemProductionCost;
 
             return {
                 name: item.name,
-                qty: item.qty,
+                qty: orderedQty,
+                deliveredQty,
                 price: priceInfo.price,
                 priceType: priceInfo.type,
                 total: itemTotal,
@@ -386,21 +534,25 @@
             let itemsHtml = '';
             let allOk = true;
             let subtotalOrderSum = 0;
+            let openSubtotalOrderSum = 0;
             let totalProductionCostSum = 0;
 
             let rawMaterialMap = {};
 
             order.items.forEach((ordItem, idx) => {
+                const openQty = Number(ordItem.qty) || 0;
+                const orderedQty = getOrderOriginalQuantity(ordItem);
+                const priceInfo = getPriceDetailsForCustomer(order.customerName, ordItem.name);
+                const unitCost = getOrderItemUnitCost(ordItem.name);
+                subtotalOrderSum += priceInfo.price * orderedQty;
+                openSubtotalOrderSum += priceInfo.price * openQty;
+                totalProductionCostSum += unitCost * orderedQty;
+                if (openQty <= 0) return;
                 const available = getStockAmount(ordItem.name);
-                const isEnough = available >= ordItem.qty;
+                const isEnough = available >= openQty;
                 if (!isEnough) allOk = false;
 
-                const priceInfo = getPriceDetailsForCustomer(order.customerName, ordItem.name);
-                const itemTotal = priceInfo.price * ordItem.qty;
-                subtotalOrderSum += itemTotal;
-
-                const unitCost = getOrderItemUnitCost(ordItem.name);
-                totalProductionCostSum += unitCost * ordItem.qty;
+                const itemTotal = priceInfo.price * openQty;
 
                 let badgeColor = priceInfo.type === 'Sonderpreis' ? 'var(--accent-blue)' : 'var(--accent-gray)';
                 let isChecked = ordItem.produced ? 'checked' : '';
@@ -409,13 +561,13 @@
                 itemsHtml += `
                     <div style="margin-bottom: 6px; display: flex; align-items: center; gap: 8px; ${textDecoration}">
                         <input type="checkbox" ${isChecked} onchange="toggleOrderProductionStatus(${order.id}, ${idx}, this)" title="Artikel fertig produziert" style="width: 16px; height: 16px; cursor: pointer;" />
-                        <span>• <strong>${Number(ordItem.qty) || 0}x</strong> ${escapeHtml(ordItem.name)} à $${priceInfo.price.toFixed(2)} 
+                        <span>• <strong>${openQty}x</strong> ${escapeHtml(ordItem.name)} ${getOrderDeliveredQuantity(ordItem) > 0 ? '<span style="font-size:0.76rem;color:var(--text-muted);">(noch offen)</span> ' : ''}à $${priceInfo.price.toFixed(2)}
                         <span style="font-size: 0.75rem; background: ${badgeColor}22; color: ${badgeColor}; padding: 1px 6px; border-radius: 4px; border: 1px solid ${badgeColor};">${escapeHtml(priceInfo.type)}</span> = 
                         <span style="color: var(--accent-green); font-weight: 600;">$${itemTotal.toFixed(2)}</span> 
                         <span style="font-size: 0.8rem; color: var(--text-muted);">(Lager: <span style="color: ${isEnough ? 'var(--accent-green)' : 'var(--accent-red)'}">${Number(available) || 0}</span>)</span></span>
                     </div>`;
 
-                resolveRawMaterials(ordItem.name, ordItem.qty, rawMaterialMap);
+                resolveRawMaterials(ordItem.name, openQty, rawMaterialMap);
             });
 
             let orderDiscount = order.discount !== undefined ? order.discount : 0;
@@ -423,6 +575,10 @@
 
             if (orderDiscount > 0) {
                 itemsHtml += `<div style="margin-top: 6px; font-size: 0.85rem; color: var(--text-muted);">Zwischensumme: $${subtotalOrderSum.toFixed(2)} (abzgl. ${orderDiscount}% Rabatt)</div>`;
+            }
+            if (order.items.some(item => getOrderDeliveredQuantity(item) > 0)) {
+                const openTotal = openSubtotalOrderSum * (1 - (orderDiscount / 100));
+                itemsHtml += `<div style="margin-top: 4px; font-size: 0.85rem; color: var(--text-muted);">Warenwert der noch offenen Mengen: $${openTotal.toFixed(2)}</div>`;
             }
             itemsHtml += `<div style="margin-top: 4px; border-top: 1px solid var(--border-color); padding-top: 6px; font-weight: 700; color: #f59e0b;">Der Kunde bezahlt die Gesamtsumme der Bestellung: $${finalOrderSum.toFixed(2)}</div>`;
             itemsHtml += `<div style="margin-top: 4px; font-weight: 700; color: #ef4444;">Herstellungs-/Einkaufskosten gesamt: $${totalProductionCostSum.toFixed(2)}</div>`;
@@ -456,6 +612,7 @@
                         <button type="button" class="btn order-payment-toggle ${order.paid ? 'is-paid' : 'is-unpaid'}" data-order-payment-id="${order.id}" onclick="toggleOrderPaymentStatus(${order.id})" title="${order.paid && order.paidAt ? `Bezahlt am ${escapeHtml(order.paidAt)}${order.paidBy ? ` von ${escapeHtml(order.paidBy)}` : ''}. Klicken zum Zurücksetzen.` : 'Klicken, sobald der Kunde bezahlt hat.'}">
                             ${order.paid ? `✓ Bezahlt${order.paidMethod ? ` – ${escapeHtml(order.paidMethod === 'Rechnung' ? 'per Rechnung' : order.paidMethod)}` : ''}` : '○ Offen – als bezahlt markieren'}
                         </button>
+                        <button type="button" class="btn btn-secondary order-partial-delivery-toggle" onclick="openOrderPartialDeliveryModal(${order.id})">Teil ausliefern</button>
                         <button class="btn btn-success" onclick="fulfillOrder(${order.id})">Ausliefern</button>
                         <button class="btn btn-danger delete-action" data-permission-action="delete" onclick="deleteOrder(${order.id})">Löschen</button>
                     </div>
