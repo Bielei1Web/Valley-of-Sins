@@ -689,6 +689,10 @@
                     </div>
                     <div class="sales-calculator-count" id="sales-calculator-count">0 Artikel</div>
                 </div>
+                <div class="sales-product-search filter-card">
+                    <label for="sales-calculator-search">Artikel suchen:</label>
+                    <input type="search" id="sales-calculator-search" placeholder="Artikelname eingeben..." oninput="renderSalesCalculatorProducts()" autocomplete="off" />
+                </div>
                 <div id="sales-calculator-products" class="sales-products-grid"></div>
             </section>
 
@@ -1512,7 +1516,7 @@
 <script src="js/bestellungen.js?v=20261017-payment-3"></script>
 <script src="js/kunden.js"></script>
 <script src="js/verkaufspreise.js"></script>
-<script src="js/verkaufsrechner.js?v=20261017-payment-1"></script>
+<script src="js/verkaufsrechner.js?v=20261019-sales-search-1"></script>
 <script src="js/einkaufspreise.js"></script>
 <script src="js/einkaufsliste.js"></script>
 <script src="js/herstellung.js"></script>

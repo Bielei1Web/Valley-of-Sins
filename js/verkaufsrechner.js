@@ -64,11 +64,24 @@ function renderSalesCalculatorProducts() {
     const countEl = document.getElementById('sales-calculator-count');
     if (!container) return;
 
-    const products = getSalesCalculatorProducts();
-    if (countEl) countEl.textContent = `${products.length} Artikel`;
+    const allProducts = getSalesCalculatorProducts();
+    const searchInput = document.getElementById('sales-calculator-search');
+    const query = searchInput ? searchInput.value.trim().toLocaleLowerCase('de') : '';
+    const products = query
+        ? allProducts.filter(product => product.name.toLocaleLowerCase('de').includes(query))
+        : allProducts;
+    if (countEl) {
+        countEl.textContent = query
+            ? `${products.length} von ${allProducts.length} Artikeln`
+            : `${allProducts.length} Artikel`;
+    }
 
-    if (!products.length) {
+    if (!allProducts.length) {
         container.innerHTML = '<div class="sales-calculator-empty">Keine Artikel im Lager und keine Rezepte vorhanden.</div>';
+        return;
+    }
+    if (!products.length) {
+        container.innerHTML = '<div class="sales-calculator-empty">Keine passenden Artikel gefunden.</div>';
         return;
     }
 

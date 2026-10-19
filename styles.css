@@ -3157,6 +3157,9 @@
 .sales-calculator-header h2,.sales-cart-header h3{margin:0}
 .sales-calculator-header p{margin:5px 0 0;color:var(--text-muted);font-size:.9rem}
 .sales-calculator-count,.sales-cart-header span{color:var(--text-muted);font-size:.82rem;white-space:nowrap}
+.sales-product-search{margin:16px 0 0}
+.filter-card #sales-calculator-search{flex:1;width:350px;min-width:180px;max-width:350px;min-height:42px;padding:10px 14px;background-color:var(--input-bg);color:var(--text-color);border:1px solid var(--border-color);border-radius:7px;font:inherit}
+.filter-card #sales-calculator-search:focus{border-color:var(--primary-color);box-shadow:0 0 0 3px var(--primary-soft);outline:none}
 .sales-products-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:18px}
 .sales-product-card{min-height:135px;padding:14px;border:1px solid var(--border-color);border-radius:11px;background:var(--tab-inactive-bg);color:var(--text-color);display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:6px;cursor:pointer;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease}
 .sales-product-card:hover{transform:translateY(-2px);border-color:var(--primary-bright);box-shadow:0 8px 22px rgba(0,0,0,.18)}
